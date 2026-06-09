@@ -54,7 +54,7 @@ $notice     = isset( $_GET['crmc_notice'] ) ? sanitize_key( wp_unslash( $_GET['c
 				<th scope="row"><label for="api_key"><?php esc_html_e( 'API key', 'crm-connect' ); ?></label></th>
 				<td>
 					<input name="api_key" id="api_key" type="password" class="regular-text" autocomplete="off"
-						placeholder="<?php echo $has_key ? esc_attr__( '•••••••• (stored — leave blank to keep)', 'crm-connect' ) : ''; ?>">
+						placeholder="<?php echo $has_key ? esc_attr__( '•••••••• (stored - leave blank to keep)', 'crm-connect' ) : ''; ?>">
 					<p class="description"><?php esc_html_e( 'Find it in Freshsales under Profile Settings → API Settings. We store it encrypted.', 'crm-connect' ); ?></p>
 					<button type="button" class="button" id="crm-connect-test"><?php esc_html_e( 'Test connection', 'crm-connect' ); ?></button>
 					<span class="crm-connect-test-result"></span>

@@ -131,11 +131,11 @@ $pages = (int) ceil( $total / max( 1, $per_page ) );
 						</div>
 						<div class="crm-connect-detail__col">
 							<h4><?php esc_html_e( 'Sent to Freshsales', 'crm-connect' ); ?></h4>
-							<pre class="crm-connect-pre" data-copy="sent"><?php echo esc_html( $row->crm_request ? Json::pretty( $row->crm_request ) : '—' ); ?></pre>
+							<pre class="crm-connect-pre" data-copy="sent"><?php echo esc_html( $row->crm_request ? Json::pretty( $row->crm_request ) : '-' ); ?></pre>
 						</div>
 						<div class="crm-connect-detail__col">
 							<h4><?php esc_html_e( 'Freshsales response', 'crm-connect' ); ?></h4>
-							<pre class="crm-connect-pre" data-copy="response"><?php echo esc_html( $row->crm_response ? Json::pretty( $row->crm_response ) : '—' ); ?></pre>
+							<pre class="crm-connect-pre" data-copy="response"><?php echo esc_html( $row->crm_response ? Json::pretty( $row->crm_response ) : '-' ); ?></pre>
 						</div>
 					</div>
 					<button type="button" class="crmc-btn crmc-btn--ghost crmc-btn--sm crm-connect-copy" data-id="<?php echo (int) $row->id; ?>"><?php esc_html_e( 'Copy all (for debugging)', 'crm-connect' ); ?></button>

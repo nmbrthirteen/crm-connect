@@ -1,15 +1,15 @@
-# CRM Connect — Design Spec
+# CRM Connect - Design Spec
 
-A whitelabeled WordPress plugin that captures **every** Elementor form submission — including every field, UTM, and trackable — and reliably forwards it, server-side, to Freshsales (Freshworks CRM) via a configurable per-form field mapping. Built internal-first for upgaming.com, architected to generalize to other CRMs later.
+A whitelabeled WordPress plugin that captures **every** Elementor form submission - including every field, UTM, and trackable - and reliably forwards it, server-side, to Freshsales (Freshworks CRM) via a configurable per-form field mapping. Built internal-first for upgaming.com, architected to generalize to other CRMs later.
 
-- **Code slug / text domain:** `crm-connect` (neutral — never references Freshsales or a brand)
-- **UI display name (default, editable):** "CRM Connect" — the deployment sets its own brand in the UI; no brand is hardcoded
+- **Code slug / text domain:** `crm-connect` (neutral - never references Freshsales or a brand)
+- **UI display name (default, editable):** "CRM Connect" - the deployment sets its own brand in the UI; no brand is hardcoded
 
 ---
 
 ## 1. Core mandate
 
-> Miss **nothing** — not a single field, UTM parameter, or trackable — and do it **reliably**, server-side, so no ad-blocker or CRM outage can lose a lead.
+> Miss **nothing** - not a single field, UTM parameter, or trackable - and do it **reliably**, server-side, so no ad-blocker or CRM outage can lose a lead.
 
 Every design decision below serves that mandate.
 
@@ -22,7 +22,7 @@ Elementor submit (AJAX)
   → elementor_pro/forms/new_record hook (server-side)
       → write COMPLETE payload to crm_connect queue table   ← "never lose it" guarantee (persist BEFORE any CRM call)
   → background worker (wp-cron heartbeat)
-      → CRM_Provider (Freshsales) — dynamic field mapping
+      → CRM_Provider (Freshsales) - dynamic field mapping
       → retries w/ exponential backoff, rate-limit aware
       → success | dead-letter
   → reconciliation cron (defense in depth)
@@ -43,7 +43,7 @@ The submission is **persisted to our DB before any network call**, so a slow/dow
 **Attribution capture (non-blockable):** first-party JS on every page writes an attribution cookie on landing. First-party + same-domain ⇒ ad-blockers don't touch it; the actual CRM send is server→server ⇒ no client blocker can reach it.
 - Captures **first-touch** (set once, never overwritten) **and last-touch** (updated each visit)
 - Stores: `utm_source/medium/campaign/term/content`, `gclid`, `fbclid`, `msclkid`, referrer, landing page, first/last timestamps
-- Server reads it from `$_COOKIE` during the hook — independent of whether the form contains hidden fields
+- Server reads it from `$_COOKIE` during the hook - independent of whether the form contains hidden fields
 - Optional redundancy: auto-inject hidden fields into Elementor forms as a fallback source
 
 **Everything captured becomes a mappable field** in the UI (form fields + all trackables + Elementor meta + Freshsales visitor id if present).
@@ -67,15 +67,15 @@ The submission is **persisted to our DB before any network call**, so a slow/dow
 - Text/number/date/email/phone: validated passthrough
 - Static/default values per destination for required CRM fields
 
-**Unmapped fields — admin-gated auto-create (chosen path):**
-- One-click **"+ Create in Freshsales"** per unmapped form field → `POST /api/settings/<entity>/forms/<form_id>/fields` (text/number/dropdown/radio/lookup/multiselect), then wires the mapping. Deliberate, visible, once per field — never silent-on-every-submission (avoids schema rot, respects API scope/rate limits).
+**Unmapped fields - admin-gated auto-create (chosen path):**
+- One-click **"+ Create in Freshsales"** per unmapped form field → `POST /api/settings/<entity>/forms/<form_id>/fields` (text/number/dropdown/radio/lookup/multiselect), then wires the mapping. Deliberate, visible, once per field - never silent-on-every-submission (avoids schema rot, respects API scope/rate limits).
 - Anything still unmapped → **catch-all "Submission details" long-text field + a note/activity** on the record, so it's visible in the CRM.
 - Raw payload is **always** in our DB regardless → nothing is ever truly lost.
 
 **Dedup:** `POST /api/contacts/upsert` with `unique_identifier` (email) → create-or-update, no duplicate contacts.
 
 **Deal layer (`POST /api/deals` requires `name`, `amount`, `sales_account_id`):**
-- `name` from a profile template, e.g. `"{company} — {form_name}"`
+- `name` from a profile template, e.g. `"{company} - {form_name}"`
 - `amount` from a mapped field or a static default
 - `sales_account_id` via **lookup-or-create Sales Account by company name** before deal creation
 
@@ -87,7 +87,7 @@ The submission is **persisted to our DB before any network call**, so a slow/dow
 - **Worker:** wp-cron minute heartbeat (no external dependency) + low-latency nudge on submit. Exponential-backoff retries → **dead-letter** on exhaustion. wp-cron's `doing_cron` lock serializes runs, avoiding double-send races.
 - **Rate-limit aware:** Freshsales allows **1000 req/hr/account**, returns 429. Worker throttles, honors `Retry-After`, caches schema, batches where possible.
 - **Auto-pause:** after N consecutive failures the worker auto-pauses (so it doesn't burn the hourly budget hammering a broken endpoint) + alerts; manual **Resume** button.
-- **Reconciliation cron:** periodically diffs Elementor's `wp_e_submissions` against our queue and backfills/re-queues anything missing — so even a fatal error in *our own* hook self-heals.
+- **Reconciliation cron:** periodically diffs Elementor's `wp_e_submissions` against our queue and backfills/re-queues anything missing - so even a fatal error in *our own* hook self-heals.
 
 ---
 
@@ -109,13 +109,13 @@ The submission is **persisted to our DB before any network call**, so a slow/dow
 
 ## 8. Generalization seam
 
-A `CRM_Provider` interface — `list_objects()`, `discover_fields($object)`, `upsert_record($object, $data)`, `create_field($object, $spec)`. **Freshsales** is the first concrete implementation. The queue, capture layer, mapping UI, reconciliation, logging, and alerting are all **CRM-agnostic** and talk only to this interface. Adding HubSpot/Pipedrive later = one new provider class, zero changes to the spine.
+A `CRM_Provider` interface - `list_objects()`, `discover_fields($object)`, `upsert_record($object, $data)`, `create_field($object, $spec)`. **Freshsales** is the first concrete implementation. The queue, capture layer, mapping UI, reconciliation, logging, and alerting are all **CRM-agnostic** and talk only to this interface. Adding HubSpot/Pipedrive later = one new provider class, zero changes to the spine.
 
 ---
 
 ## 9. Whitelabel & security
 
-- **Branding editable in UI:** display name (default "Upgaming CRM Connect"), logo, admin-menu label — rebrandable per deployment without code changes. Code slug stays `crm-connect`.
+- **Branding editable in UI:** display name (default "Upgaming CRM Connect"), logo, admin-menu label - rebrandable per deployment without code changes. Code slug stays `crm-connect`.
 - **Security:** nonce + `current_user_can` capability checks on all admin/AJAX endpoints; API key + bundle alias stored encrypted at rest; least-privilege.
 
 ---

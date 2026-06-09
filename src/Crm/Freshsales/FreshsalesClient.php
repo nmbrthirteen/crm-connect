@@ -98,7 +98,7 @@ final class FreshsalesClient {
 			return __( 'Freshsales rejected the API key. Re-copy it from Freshsales → Profile Settings → API Settings.', 'crm-connect' );
 		}
 		if ( $status === 404 ) {
-			return __( 'Freshsales returned 404 — the bundle domain or API key does not match. The domain should be just your CRM host (e.g. yourco.myfreshworks.com), taken from Freshsales → Profile Settings → API Settings, with the matching key.', 'crm-connect' );
+			return __( 'Freshsales returned 404 - the bundle domain or API key does not match. The domain should be just your CRM host (e.g. yourco.myfreshworks.com), taken from Freshsales → Profile Settings → API Settings, with the matching key.', 'crm-connect' );
 		}
 		return sprintf(
 			/* translators: %d: HTTP status code */

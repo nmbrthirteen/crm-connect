@@ -304,7 +304,7 @@
 
 	MappingEditor.prototype.formLabel = function ( form ) {
 		if ( ! form ) { return ''; }
-		return ( form.name || form.id ) + ( form.title ? ' — ' + form.title : '' ) + ' (' + form.id + ')';
+		return ( form.name || form.id ) + ( form.title ? ' - ' + form.title : '' ) + ' (' + form.id + ')';
 	};
 
 	MappingEditor.prototype.objectLabel = function ( key ) {
@@ -379,7 +379,7 @@
 
 		return el( 'tr', {}, [
 			formCell,
-			el( 'td', { text: this.sendsTo( profile ) || '—' } ),
+			el( 'td', { text: this.sendsTo( profile ) || '-' } ),
 			el( 'td', { class: 'crmc-table__c' }, [ el( 'label', { class: 'crmc-switch' }, [ toggle, el( 'span', { class: 'crmc-switch__track' } ) ] ) ] ),
 			el( 'td', { class: 'crmc-table__r' }, [
 				el( 'button', { type: 'button', class: 'crmc-btn crmc-btn--ghost crmc-btn--sm', text: i18n.edit || 'Edit', onClick: function () { self.showEditor( profile ); } } ),
@@ -420,7 +420,7 @@
 		return el( 'div', { class: 'crm-connect-empty' }, [
 			el( 'div', { class: 'crm-connect-empty__icon', text: '🔗' } ),
 			el( 'h2', { text: i18n.emptyTitle || 'Connect your first form' } ),
-			el( 'p', { text: i18n.emptySub || 'Pick a form and every submission flows into Freshsales — fields, tracking and all.' } ),
+			el( 'p', { text: i18n.emptySub || 'Pick a form and every submission flows into Freshsales - fields, tracking and all.' } ),
 			el( 'button', { type: 'button', class: 'crmc-btn crmc-btn--primary', text: i18n.emptyCta || 'Connect a form', onClick: function () { self.showEditor( { destinations: [] } ); } } )
 		] );
 	};
@@ -466,7 +466,7 @@
 		var status = node.querySelector( '.crm-connect-profile__status' );
 
 		if ( profile._reuse ) {
-			status.textContent = i18n.reuseHint || 'Copied this mapping — choose a form to apply it to, then Save.';
+			status.textContent = i18n.reuseHint || 'Copied this mapping - choose a form to apply it to, then Save.';
 		}
 
 		var dests = profile.destinations || [];

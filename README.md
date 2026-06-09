@@ -1,6 +1,6 @@
 # CRM Connect
 
-A whitelabeled WordPress plugin that captures website form submissions — every field, UTM and trackable — and reliably forwards them **server-side** to a CRM (Freshsales first) via a configurable per-form mapping. See [`DESIGN.md`](./DESIGN.md) for the full design rationale.
+A whitelabeled WordPress plugin that captures website form submissions - every field, UTM and trackable - and reliably forwards them **server-side** to a CRM (Freshsales first) via a configurable per-form mapping. See [`DESIGN.md`](./DESIGN.md) for the full design rationale.
 
 ## Install (development)
 
@@ -8,9 +8,9 @@ A whitelabeled WordPress plugin that captures website form submissions — every
 2. Optional but recommended: `composer dump-autoload -o` (a PSR-4 fallback autoloader is built in, so this is not required).
 3. Activate **CRM Connect** in WP Admin → Plugins. Activation creates the queue table.
 4. Go to the **CRM Connect** menu:
-   - **Settings** — enter your Freshsales domain (`yourco.myfreshworks.com`) + API key, then **Test connection**. Set branding, alert email/Slack, retention, auto-pause.
-   - **Mappings** — add a mapping: pick a form, add a CRM object (Contact/Deal), map fields, set the dedupe key and a catch-all field. **Save**.
-   - **Submissions** — live log of every submission with status, full payload, CRM request/response, and retry.
+   - **Settings** - enter your Freshsales domain (`yourco.myfreshworks.com`) + API key, then **Test connection**. Set branding, alert email/Slack, retention, auto-pause.
+   - **Mappings** - add a mapping: pick a form, add a CRM object (Contact/Deal), map fields, set the dedupe key and a catch-all field. **Save**.
+   - **Submissions** - live log of every submission with status, full payload, CRM request/response, and retry.
 
 Requires PHP 8.0+, Elementor Pro (for the Elementor form source).
 
@@ -43,7 +43,7 @@ Form submit ─▶ FormSource (Elementor) ─▶ CaptureService ─▶ QueueStor
 
 ## Reliability properties
 
-- **Persist-before-send**: the full payload is written to the DB inside the form hook, before any CRM call — a CRM outage can never lose a submission.
+- **Persist-before-send**: the full payload is written to the DB inside the form hook, before any CRM call - a CRM outage can never lose a submission.
 - **Retries** with exponential backoff → **dead-letter** after 6 attempts.
 - **429-aware**: honors Freshsales' `Retry-After`; schema reads are cached (rate-limit budget is 1000/hr).
 - **Crash recovery**: items stuck in `sending` for >5 min are re-claimed.
@@ -57,6 +57,6 @@ GPL-2.0-or-later. See [`LICENSE`](./LICENSE).
 ## Known follow-ups (not yet built)
 
 - **Reconciliation cron** against Elementor's `wp_e_submissions` tables (defense-in-depth backfill if the hook itself ever fatals). Deferred pending verification of Elementor's submission-table schema.
-- **Deal orchestration**: a Deal needs `name`, `amount`, `sales_account_id`. The lookup-or-create-Sales-Account-by-company step is not yet wired — currently Deal fields are mapped directly like any object.
+- **Deal orchestration**: a Deal needs `name`, `amount`, `sales_account_id`. The lookup-or-create-Sales-Account-by-company step is not yet wired - currently Deal fields are mapped directly like any object.
 - **`create_field` form id**: Freshsales' custom-field endpoint path (`settings/<entity>/forms/<form_id>/fields`) uses a placeholder form id `0`; verify against a live account.
 - Choice-mapping UI for CRM dropdown fields (value → choice) is stubbed; mapping currently passes raw values (unmatched values fall to the catch-all).

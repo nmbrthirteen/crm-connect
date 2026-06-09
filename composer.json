@@ -1,0 +1,17 @@
+{
+    "name": "nmbrthirteen/crm-connect",
+    "description": "Captures website form submissions and reliably forwards them to a CRM via configurable per-form mapping.",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "require": {
+        "php": ">=8.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "CrmConnect\\": "src/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true
+    }
+}

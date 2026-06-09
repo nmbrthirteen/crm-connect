@@ -27,6 +27,8 @@ final class FreshsalesProvider implements CrmProvider {
 	public const NO_SPLIT      = '__no_split';
 
 	private ?array $accounts_cache = null;
+	private array $fields_cache    = [];
+	private array $form_ids        = [];
 
 	public function __construct( private FreshsalesClient $client ) {}
 
@@ -188,17 +190,143 @@ final class FreshsalesProvider implements CrmProvider {
 		return null;
 	}
 
-	public function create_field( string $object, CrmField $field ): CrmField {
-		$response = $this->client->post(
-			"settings/{$object}/forms/0/fields",
-			[
-				'field' => [
-					'label' => $field->label,
-					'type'  => $this->denormalize_type( $field->type ),
-				],
-			]
+	public function ensure_choices( string $object, array $field_choices ): void {
+		$field_choices = array_filter( $field_choices );
+		if ( ! $field_choices ) {
+			return;
+		}
+
+		$fields = $this->raw_fields( $object );
+		foreach ( $field_choices as $name => $options ) {
+			$field = $fields[ (string) $name ] ?? null;
+			if ( is_array( $field ) && $this->is_choice_field( (string) ( $field['type'] ?? '' ) ) ) {
+				$this->append_choices( $object, $field, (array) $options );
+			}
+		}
+	}
+
+	private function append_choices( string $object, array $field, array $options ): void {
+		$id = $field['id'] ?? null;
+		if ( $id === null ) {
+			return;
+		}
+
+		$existing = [];
+		$known    = [];
+		foreach ( $this->raw_choices( $field ) as $choice ) {
+			$value = is_array( $choice ) ? (string) ( $choice['value'] ?? $choice['name'] ?? $choice['label'] ?? '' ) : (string) $choice;
+			if ( $value === '' ) {
+				continue;
+			}
+			$known[ strtolower( $value ) ] = true;
+			$entry                         = [ 'value' => $value, 'label' => $value ];
+			if ( is_array( $choice ) && isset( $choice['id'] ) ) {
+				$entry['id'] = $choice['id'];
+			}
+			$existing[] = $entry;
+		}
+
+		$additions = [];
+		foreach ( $options as $option ) {
+			$option = trim( (string) $option );
+			if ( $option === '' || isset( $known[ strtolower( $option ) ] ) ) {
+				continue;
+			}
+			$known[ strtolower( $option ) ] = true;
+			$additions[]                    = [ 'value' => $option, 'label' => $option ];
+		}
+		if ( ! $additions ) {
+			return;
+		}
+
+		$form_id = $this->default_form_id( $object );
+		$this->client->put(
+			"settings/{$object}/forms/{$form_id}/fields/{$id}",
+			[ 'field' => [ 'choices' => array_merge( $existing, $additions ) ] ]
 		);
-		$created = (array) ( $response['field'] ?? [] );
+		unset( $this->fields_cache[ $object ] );
+	}
+
+	private function raw_fields( string $object ): array {
+		if ( isset( $this->fields_cache[ $object ] ) ) {
+			return $this->fields_cache[ $object ];
+		}
+		$response = $this->client->get( "settings/{$object}/fields" );
+		$raw      = $response['fields'] ?? $response;
+
+		$map = [];
+		foreach ( (array) $raw as $field ) {
+			if ( is_array( $field ) && isset( $field['name'] ) ) {
+				$map[ (string) $field['name'] ] = $field;
+			}
+		}
+		$this->fields_cache[ $object ] = $map;
+		return $map;
+	}
+
+	private function raw_choices( array $field ): array {
+		foreach ( [ 'choices', 'field_options', 'picklist_values' ] as $key ) {
+			if ( isset( $field[ $key ] ) && is_array( $field[ $key ] ) ) {
+				return $field[ $key ];
+			}
+		}
+		return [];
+	}
+
+	private function is_choice_field( string $type ): bool {
+		$type = strtolower( $type );
+		foreach ( [ 'dropdown', 'select', 'radio', 'multiselect', 'multi_select' ] as $needle ) {
+			if ( strpos( $type, $needle ) !== false ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private function default_form_id( string $object ): int {
+		if ( isset( $this->form_ids[ $object ] ) ) {
+			return $this->form_ids[ $object ];
+		}
+
+		$id = 0;
+		try {
+			$response = $this->client->get( "settings/{$object}/forms" );
+			$forms    = $response['forms'] ?? $response;
+			$first    = is_array( $forms ) ? ( $forms[0] ?? null ) : null;
+			if ( is_array( $first ) && isset( $first['id'] ) ) {
+				$id = (int) $first['id'];
+			}
+		} catch ( \Throwable $e ) {
+			$id = 0;
+		}
+
+		$this->form_ids[ $object ] = $id;
+		return $id;
+	}
+
+	private function choice_payload( array $choices ): array {
+		$payload = [];
+		foreach ( $choices as $choice ) {
+			$value = is_array( $choice ) ? (string) ( $choice['value'] ?? '' ) : (string) $choice;
+			if ( $value !== '' ) {
+				$payload[] = [ 'value' => $value, 'label' => $value ];
+			}
+		}
+		return $payload;
+	}
+
+	public function create_field( string $object, CrmField $field ): CrmField {
+		$spec = [
+			'label' => $field->label,
+			'type'  => $this->denormalize_type( $field->type ),
+		];
+		if ( $field->choices ) {
+			$spec['choices'] = $this->choice_payload( $field->choices );
+		}
+
+		$form_id  = $this->default_form_id( $object );
+		$response = $this->client->post( "settings/{$object}/forms/{$form_id}/fields", [ 'field' => $spec ] );
+		$created  = (array) ( $response['field'] ?? [] );
 
 		return new CrmField(
 			(string) ( $created['name'] ?? $field->name ),

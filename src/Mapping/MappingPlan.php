@@ -9,6 +9,7 @@ final class MappingPlan {
 	public function __construct(
 		public string $object,
 		public array $data,
-		public array $unique = []
+		public array $unique = [],
+		public array $choices = []
 	) {}
 }

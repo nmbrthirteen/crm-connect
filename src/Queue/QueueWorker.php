@@ -5,6 +5,7 @@ namespace CrmConnect\Queue;
 use CrmConnect\Crm\Exception\RateLimitException;
 use CrmConnect\Crm\ProviderFactory;
 use CrmConnect\Mapping\FieldMapper;
+use CrmConnect\Mapping\MappingPlan;
 use CrmConnect\Mapping\ProfileRepository;
 use CrmConnect\Settings;
 use CrmConnect\Support\EventLog;
@@ -118,7 +119,8 @@ final class QueueWorker {
 			$response = [];
 
 			for ( $i = $done; $i < count( $plans ); $i++ ) {
-				$plan   = $mapper->build( $plans[ $i ], $item->submission );
+				$plan = $mapper->build( $plans[ $i ], $item->submission );
+				$this->sync_choices( $provider, $plan );
 				$result = $provider->upsert_record( $plan->object, $plan->data, $plan->unique );
 
 				$request[ $plan->object ]  = $result->request ?: $plan->data;
@@ -147,6 +149,19 @@ final class QueueWorker {
 		} catch ( \Throwable $e ) {
 			$this->fail( $item, $attempts, $e, null, $done );
 			return null;
+		}
+	}
+
+	private function sync_choices( $provider, MappingPlan $plan ): void {
+		if ( ! $plan->choices || ! method_exists( $provider, 'ensure_choices' ) ) {
+			return;
+		}
+		try {
+			$provider->ensure_choices( $plan->object, $plan->choices );
+		} catch ( RateLimitException $e ) {
+			throw $e;
+		} catch ( \Throwable $e ) {
+			// Pushing choices into the CRM is best-effort; never let it block delivery of the record.
 		}
 	}
 

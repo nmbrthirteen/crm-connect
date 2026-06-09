@@ -56,15 +56,23 @@ final class ElementorFormSource implements FormSource {
 		$form_name = (string) $record->get_form_settings( 'form_name' );
 		$form_id   = (string) $record->get_form_settings( 'id' );
 
+		$options = [];
+		foreach ( $this->parser->get_form_fields( $form_id ) as $descriptor ) {
+			if ( $descriptor->options ) {
+				$options[ $descriptor->id ] = $descriptor->options;
+			}
+		}
+
 		$fields = [];
 		foreach ( (array) $record->get( 'fields' ) as $id => $field ) {
 			if ( ! is_array( $field ) ) {
 				$field = [ 'value' => $field ];
 			}
 			$fields[ (string) $id ] = [
-				'value' => $field['value'] ?? '',
-				'label' => $field['title'] ?? (string) $id,
-				'type'  => $field['type'] ?? 'text',
+				'value'   => $field['value'] ?? '',
+				'label'   => $field['title'] ?? (string) $id,
+				'type'    => $field['type'] ?? 'text',
+				'options' => $options[ (string) $id ] ?? [],
 			];
 		}
 

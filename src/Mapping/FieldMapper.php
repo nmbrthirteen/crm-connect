@@ -15,6 +15,7 @@ final class FieldMapper {
 		$flat          = $submission->flatten();
 		$data          = [];
 		$mapped_source = [];
+		$choices       = [];
 
 		foreach ( (array) ( $destination['field_map'] ?? [] ) as $crm_field => $rule ) {
 			$rule  = (array) $rule;
@@ -23,8 +24,18 @@ final class FieldMapper {
 				continue;
 			}
 			$data[ $crm_field ] = $value;
-			if ( ( $rule['source'] ?? 'field' ) !== 'static' && ! empty( $rule['key'] ) ) {
-				$mapped_source[] = (string) $rule['key'];
+
+			if ( ( $rule['source'] ?? 'field' ) === 'static' || empty( $rule['key'] ) ) {
+				continue;
+			}
+			$key             = (string) $rule['key'];
+			$mapped_source[] = $key;
+
+			if ( empty( $rule['choice_map'] ) ) {
+				$options = $this->field_options( $submission, $key );
+				if ( $options ) {
+					$choices[ (string) $crm_field ] = $options;
+				}
 			}
 		}
 
@@ -39,8 +50,18 @@ final class FieldMapper {
 		return new MappingPlan(
 			(string) ( $destination['object'] ?? 'contacts' ),
 			$data,
-			$this->resolve_unique( (array) ( $destination['unique'] ?? [] ), $flat )
+			$this->resolve_unique( (array) ( $destination['unique'] ?? [] ), $flat ),
+			$choices
 		);
+	}
+
+	/** @return string[] */
+	private function field_options( Submission $submission, string $key ): array {
+		$field = $submission->fields[ $key ] ?? null;
+		if ( ! is_array( $field ) || ! is_array( $field['options'] ?? null ) ) {
+			return [];
+		}
+		return array_values( array_filter( array_map( 'strval', $field['options'] ) ) );
 	}
 
 	private function resolve_value( array $rule, array $flat ) {

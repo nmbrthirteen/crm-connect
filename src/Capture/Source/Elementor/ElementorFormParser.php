@@ -9,7 +9,7 @@ defined( 'ABSPATH' ) || exit;
 
 final class ElementorFormParser {
 
-	private const CACHE = 'crm_connect_elementor_forms';
+	private const CACHE = 'crm_connect_elementor_forms_v2';
 
 	private ?array $index = null;
 
@@ -35,7 +35,7 @@ final class ElementorFormParser {
 		$entry  = $this->index()[ $form_id ] ?? null;
 		$fields = [];
 		foreach ( $entry['fields'] ?? [] as $field ) {
-			$fields[] = new FormFieldDescriptor( $field['id'], $field['label'], $field['type'] );
+			$fields[] = new FormFieldDescriptor( $field['id'], $field['label'], $field['type'], $field['options'] ?? [] );
 		}
 		return $fields;
 	}
@@ -129,12 +129,38 @@ final class ElementorFormParser {
 			if ( $label === '' ) {
 				$label = trim( (string) ( $field['placeholder'] ?? '' ) );
 			}
+			$type     = (string) ( $field['field_type'] ?? 'text' );
 			$fields[] = [
-				'id'    => $id,
-				'label' => $label !== '' ? $label : $id,
-				'type'  => (string) ( $field['field_type'] ?? 'text' ),
+				'id'      => $id,
+				'label'   => $label !== '' ? $label : $id,
+				'type'    => $type,
+				'options' => $this->extract_options( $type, $field ),
 			];
 		}
 		return $fields;
+	}
+
+	/** @return string[] */
+	private function extract_options( string $type, array $field ): array {
+		if ( ! in_array( $type, [ 'select', 'radio', 'checkbox' ], true ) ) {
+			return [];
+		}
+
+		$raw   = $field['field_options'] ?? '';
+		$lines = is_array( $raw ) ? $raw : preg_split( '/\r\n|\r|\n/', (string) $raw );
+
+		$options = [];
+		foreach ( (array) $lines as $line ) {
+			$line = trim( (string) $line );
+			if ( $line === '' ) {
+				continue;
+			}
+			$pipe  = strpos( $line, '|' );
+			$value = $pipe === false ? $line : trim( substr( $line, $pipe + 1 ) );
+			if ( $value !== '' ) {
+				$options[] = $value;
+			}
+		}
+		return $options;
 	}
 }

@@ -750,7 +750,7 @@
 					setTimeout( function () { copyBtn.textContent = i18n.copyChoices || 'Copy choices'; }, 1500 );
 				} } );
 				var note = el( 'div', { class: 'crm-connect-choices__note' }, [
-					el( 'span', { text: i18n.needChoices || 'Freshsales needs these choices on this field (case-sensitive): ' } ),
+					el( 'span', { text: i18n.needChoices || 'Add to this field in Freshsales: ' } ),
 					el( 'span', { class: 'crm-connect-choices__vals', text: options.join( ', ' ) } ),
 					copyBtn
 				] );
@@ -761,7 +761,9 @@
 			}
 
 			var mapWrap = el( 'div', { class: 'crm-connect-choices__map' } );
-			mapWrap.appendChild( el( 'div', { class: 'crm-connect-choices__hint', text: options.length ? ( i18n.choiceHintOptional || 'Rename a form value to match a CRM choice:' ) : ( i18n.choiceHint || 'Map values (unmapped are skipped):' ) } ) );
+			if ( ! options.length ) {
+				mapWrap.appendChild( el( 'div', { class: 'crm-connect-choices__hint', text: i18n.choiceHint || 'Map values (unmapped are skipped):' } ) );
+			}
 			var map = rule.choice_map || {};
 			Object.keys( map ).forEach( function ( from ) { mapWrap.appendChild( choiceRow( field, from, map[ from ] ) ); } );
 			if ( ! Object.keys( map ).length && ! options.length ) { mapWrap.appendChild( choiceRow( field, '', '' ) ); }

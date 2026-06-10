@@ -207,14 +207,10 @@ final class FreshsalesProvider implements CrmProvider {
 				$report[] = sprintf( '%s: not found in CRM', $name );
 				continue;
 			}
-			if ( ! $this->is_choice_field( (string) ( $field['type'] ?? '' ) ) ) {
-				$report[] = sprintf( '%s: not a list field in CRM (type: %s)', $name, (string) ( $field['type'] ?? '?' ) );
-				continue;
-			}
 			$added    = $this->append_choices( $object, $field, (array) $options );
 			$report[] = $added
 				? sprintf( '%s: added %s', $name, implode( ', ', $added ) )
-				: sprintf( '%s: already in sync', $name );
+				: sprintf( '%s: already in sync (CRM type: %s)', $name, (string) ( $field['type'] ?? '?' ) );
 		}
 		return $report;
 	}
@@ -258,8 +254,8 @@ final class FreshsalesProvider implements CrmProvider {
 
 		$body = [
 			'field' => [
-				'label'   => (string) ( $field['label'] ?? '' ),
-				'type'    => (string) ( $field['type'] ?? 'dropdown' ),
+				'label'   => (string) ( $field['label'] ?? $field['name'] ?? '' ),
+				'type'    => 'dropdown',
 				'choices' => array_merge( $existing, $additions ),
 			],
 		];
@@ -312,16 +308,6 @@ final class FreshsalesProvider implements CrmProvider {
 			}
 		}
 		return [];
-	}
-
-	private function is_choice_field( string $type ): bool {
-		$type = strtolower( $type );
-		foreach ( [ 'dropdown', 'select', 'radio', 'multiselect', 'multi_select' ] as $needle ) {
-			if ( strpos( $type, $needle ) !== false ) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	private function default_form_id( string $object ): int {

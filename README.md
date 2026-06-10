@@ -50,6 +50,18 @@ Form submit ─▶ FormSource (Elementor) ─▶ CaptureService ─▶ QueueStor
 - **Auto-pause** after N consecutive failures + email/Slack alert; manual resume.
 - **Retention purge** of old sent rows (configurable, default 180 days).
 
+## Releases & updates
+
+The plugin self-updates from GitHub Releases via [Plugin Update Checker](https://github.com/YahnisElsts/plugin-update-checker) (bundled in `lib/`). Installed sites see the native WordPress "Update available" notice and can one-click update (or enable WordPress's per-plugin auto-update toggle for hands-off updates).
+
+To cut a release:
+
+```
+bin/release.sh 0.3.0
+```
+
+This bumps the version, commits, tags `v0.3.0`, and pushes. The `Release` GitHub Action then builds a clean `crm-connect.zip` and publishes it to the release automatically.
+
 ## License
 
 GPL-2.0-or-later. See [`LICENSE`](./LICENSE).

@@ -39,6 +39,19 @@ if ( is_readable( $crm_connect_composer ) ) {
 	);
 }
 
+$crm_connect_puc = CRM_CONNECT_PATH . 'lib/plugin-update-checker/plugin-update-checker.php';
+if ( is_readable( $crm_connect_puc ) ) {
+	require $crm_connect_puc;
+
+	$crm_connect_updater = \YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
+		'https://github.com/nmbrthirteen/crm-connect/',
+		CRM_CONNECT_FILE,
+		'crm-connect'
+	);
+	$crm_connect_updater->setBranch( 'main' );
+	$crm_connect_updater->getVcsApi()->enableReleaseAssets();
+}
+
 register_activation_hook( __FILE__, [ CrmConnect\Database\Schema::class, 'install' ] );
 register_deactivation_hook( __FILE__, [ CrmConnect\Plugin::class, 'deactivate' ] );
 

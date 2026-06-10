@@ -1,0 +1,33 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build plugin zip
+        run: |
+          mkdir -p build/crm-connect
+          rsync -a ./ build/crm-connect/ \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='build' \
+            --exclude='node_modules' \
+            --exclude='.gitignore' \
+            --exclude='.distignore'
+          cd build && zip -rq ../crm-connect.zip crm-connect
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: crm-connect.zip
+          generate_release_notes: true

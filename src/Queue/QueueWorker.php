@@ -117,15 +117,20 @@ final class QueueWorker {
 		try {
 			$request  = [];
 			$response = [];
+			$sync     = [];
 
 			for ( $i = $done; $i < count( $plans ); $i++ ) {
-				$plan = $mapper->build( $plans[ $i ], $item->submission );
-				$this->sync_choices( $provider, $plan );
+				$plan   = $mapper->build( $plans[ $i ], $item->submission );
+				$sync   = array_merge( $sync, $this->sync_choices( $provider, $plan ) );
 				$result = $provider->upsert_record( $plan->object, $plan->data, $plan->unique );
 
 				$request[ $plan->object ]  = $result->request ?: $plan->data;
 				$response[ $plan->object ] = $result->response;
 				$done                      = $i + 1;
+			}
+
+			if ( $sync ) {
+				$response['_choice_sync'] = $sync;
 			}
 
 			$this->queue->mark_sent( $item->id, $request, $response );
@@ -152,9 +157,10 @@ final class QueueWorker {
 		}
 	}
 
-	private function sync_choices( $provider, MappingPlan $plan ): void {
+	/** @return string[] sync report, surfaced in the stored response for debugging */
+	private function sync_choices( $provider, MappingPlan $plan ): array {
 		if ( ! $plan->choices || ! method_exists( $provider, 'ensure_choices' ) ) {
-			return;
+			return [];
 		}
 		try {
 			$report = (array) $provider->ensure_choices( $plan->object, $plan->choices );
@@ -166,11 +172,13 @@ final class QueueWorker {
 					EventLog::warning( sprintf( __( 'CRM list field check - %s', 'crm-connect' ), $line ) );
 				}
 			}
+			return $report;
 		} catch ( RateLimitException $e ) {
 			throw $e;
 		} catch ( \Throwable $e ) {
 			// Pushing choices into the CRM is best-effort; never let it block delivery of the record.
 			EventLog::warning( sprintf( __( 'Could not sync CRM list options: %s', 'crm-connect' ), $e->getMessage() ) );
+			return [ 'sync failed: ' . $e->getMessage() ];
 		}
 	}
 

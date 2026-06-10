@@ -6,6 +6,7 @@ use CrmConnect\Crm\CrmField;
 use CrmConnect\Crm\CrmObjectType;
 use CrmConnect\Crm\CrmProvider;
 use CrmConnect\Crm\CrmResult;
+use CrmConnect\Crm\Exception\RateLimitException;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -255,12 +256,35 @@ final class FreshsalesProvider implements CrmProvider {
 			return [];
 		}
 
+		$body = [
+			'field' => [
+				'label'   => (string) ( $field['label'] ?? '' ),
+				'type'    => (string) ( $field['type'] ?? 'dropdown' ),
+				'choices' => array_merge( $existing, $additions ),
+			],
+		];
+
 		$form_id = $this->default_form_id( $object );
-		$this->client->put(
+		$paths   = [
 			"settings/{$object}/forms/{$form_id}/fields/{$id}",
-			[ 'field' => [ 'choices' => array_merge( $existing, $additions ) ] ]
-		);
-		unset( $this->fields_cache[ $object ] );
+			"settings/{$object}/fields/{$id}",
+		];
+
+		$last = null;
+		foreach ( $paths as $path ) {
+			try {
+				$this->client->put( $path, $body );
+				unset( $this->fields_cache[ $object ] );
+				return $added;
+			} catch ( RateLimitException $e ) {
+				throw $e;
+			} catch ( \Throwable $e ) {
+				$last = $e;
+			}
+		}
+		if ( $last ) {
+			throw $last;
+		}
 		return $added;
 	}
 

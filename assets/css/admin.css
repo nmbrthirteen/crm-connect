@@ -356,6 +356,10 @@
 	background: #f6f7f9; border: 1px solid var(--crmc-border); border-radius: 8px;
 }
 .crm-connect-choices__hint { font-size: 12px; color: var(--crmc-muted); margin-bottom: 8px; }
+.crm-connect-choices__auto {
+	font-size: 12px; color: #0a4c2e; background: #edf7f1;
+	border-left: 3px solid #46b450; padding: 6px 9px; margin-bottom: 8px; border-radius: 4px;
+}
 .crm-connect-choicerow {
 	display: grid; grid-template-columns: minmax(0,1fr) 18px minmax(0,1fr) 28px;
 	gap: 8px; align-items: center; margin-bottom: 6px;

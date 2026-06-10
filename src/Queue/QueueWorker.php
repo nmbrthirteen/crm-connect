@@ -157,11 +157,20 @@ final class QueueWorker {
 			return;
 		}
 		try {
-			$provider->ensure_choices( $plan->object, $plan->choices );
+			$report = (array) $provider->ensure_choices( $plan->object, $plan->choices );
+			foreach ( $report as $line ) {
+				$line = (string) $line;
+				if ( strpos( $line, ': added ' ) !== false ) {
+					EventLog::info( sprintf( __( 'CRM list options synced - %s', 'crm-connect' ), $line ) );
+				} elseif ( strpos( $line, ': not ' ) !== false ) {
+					EventLog::warning( sprintf( __( 'CRM list field check - %s', 'crm-connect' ), $line ) );
+				}
+			}
 		} catch ( RateLimitException $e ) {
 			throw $e;
 		} catch ( \Throwable $e ) {
 			// Pushing choices into the CRM is best-effort; never let it block delivery of the record.
+			EventLog::warning( sprintf( __( 'Could not sync CRM list options: %s', 'crm-connect' ), $e->getMessage() ) );
 		}
 	}
 

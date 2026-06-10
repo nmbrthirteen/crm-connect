@@ -190,25 +190,39 @@ final class FreshsalesProvider implements CrmProvider {
 		return null;
 	}
 
-	public function ensure_choices( string $object, array $field_choices ): void {
+	/** @return string[] human-readable report, one line per field */
+	public function ensure_choices( string $object, array $field_choices ): array {
 		$field_choices = array_filter( $field_choices );
 		if ( ! $field_choices ) {
-			return;
+			return [];
 		}
 
 		$fields = $this->raw_fields( $object );
+		$report = [];
 		foreach ( $field_choices as $name => $options ) {
-			$field = $fields[ (string) $name ] ?? null;
-			if ( is_array( $field ) && $this->is_choice_field( (string) ( $field['type'] ?? '' ) ) ) {
-				$this->append_choices( $object, $field, (array) $options );
+			$name  = (string) $name;
+			$field = $fields[ $name ] ?? null;
+			if ( ! is_array( $field ) ) {
+				$report[] = sprintf( '%s: not found in CRM', $name );
+				continue;
 			}
+			if ( ! $this->is_choice_field( (string) ( $field['type'] ?? '' ) ) ) {
+				$report[] = sprintf( '%s: not a list field in CRM (type: %s)', $name, (string) ( $field['type'] ?? '?' ) );
+				continue;
+			}
+			$added    = $this->append_choices( $object, $field, (array) $options );
+			$report[] = $added
+				? sprintf( '%s: added %s', $name, implode( ', ', $added ) )
+				: sprintf( '%s: already in sync', $name );
 		}
+		return $report;
 	}
 
-	private function append_choices( string $object, array $field, array $options ): void {
+	/** @return string[] values actually added */
+	private function append_choices( string $object, array $field, array $options ): array {
 		$id = $field['id'] ?? null;
 		if ( $id === null ) {
-			return;
+			return [];
 		}
 
 		$existing = [];
@@ -227,6 +241,7 @@ final class FreshsalesProvider implements CrmProvider {
 		}
 
 		$additions = [];
+		$added     = [];
 		foreach ( $options as $option ) {
 			$option = trim( (string) $option );
 			if ( $option === '' || isset( $known[ strtolower( $option ) ] ) ) {
@@ -234,9 +249,10 @@ final class FreshsalesProvider implements CrmProvider {
 			}
 			$known[ strtolower( $option ) ] = true;
 			$additions[]                    = [ 'value' => $option, 'label' => $option ];
+			$added[]                        = $option;
 		}
 		if ( ! $additions ) {
-			return;
+			return [];
 		}
 
 		$form_id = $this->default_form_id( $object );
@@ -245,6 +261,7 @@ final class FreshsalesProvider implements CrmProvider {
 			[ 'field' => [ 'choices' => array_merge( $existing, $additions ) ] ]
 		);
 		unset( $this->fields_cache[ $object ] );
+		return $added;
 	}
 
 	private function raw_fields( string $object ): array {

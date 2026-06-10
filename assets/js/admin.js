@@ -681,7 +681,7 @@
 	};
 
 	MappingEditor.prototype.sourceOptions = function ( data ) {
-		var fields = ( ( data && data.form ) || [] ).map( function ( f ) { return { value: f.id, label: ( f.label || f.id ) }; } );
+		var fields = ( ( data && data.form ) || [] ).map( function ( f ) { return { value: f.id, label: ( f.label || f.id ), options: ( f.options || [] ) }; } );
 		var tr = ( data && data.trackables ) || {};
 		var trackables = Object.keys( tr ).map( function ( k ) { return { value: k, label: tr[ k ] }; } );
 		return { fields: fields, trackables: trackables };
@@ -708,6 +708,16 @@
 			] );
 		};
 
+		var srcOptions = function ( key ) {
+			var match = ( src.fields || [] ).filter( function ( f ) { return f.value === key; } )[ 0 ];
+			return ( match && match.options ) || [];
+		};
+
+		var leftKey = function () {
+			if ( isStatic ) { return ''; }
+			return ( left && left.dataset && left.dataset.value ) || rule.key || '';
+		};
+
 		var renderChoices = function ( name, force ) {
 			choiceBox.innerHTML = '';
 			var field = crmFieldByName( crmFields, name ) || { name: name, choices: [] };
@@ -717,10 +727,17 @@
 				return;
 			}
 			choiceBox.style.display = '';
-			choiceBox.appendChild( el( 'div', { class: 'crm-connect-choices__hint', text: i18n.choiceHint || 'Map values (unmapped are skipped):' } ) );
+
+			var options = srcOptions( leftKey() );
+			if ( options.length ) {
+				choiceBox.appendChild( el( 'div', { class: 'crm-connect-choices__auto', text: ( i18n.autoChoices || 'These form options are added to the CRM field automatically: ' ) + options.join( ', ' ) } ) );
+			}
+
+			choiceBox.appendChild( el( 'div', { class: 'crm-connect-choices__hint', text: options.length ? ( i18n.choiceHintOptional || 'Optional - only to rename a value before it is sent:' ) : ( i18n.choiceHint || 'Map values (unmapped are skipped):' ) } ) );
+
 			var map = rule.choice_map || {};
 			Object.keys( map ).forEach( function ( from ) { choiceBox.appendChild( choiceRow( field, from, map[ from ] ) ); } );
-			if ( ! Object.keys( map ).length ) { choiceBox.appendChild( choiceRow( field, '', '' ) ); }
+			if ( ! Object.keys( map ).length && ! options.length ) { choiceBox.appendChild( choiceRow( field, '', '' ) ); }
 			var addBtn = el( 'button', { type: 'button', class: 'button-link', text: i18n.addValue || '+ Value', onClick: function () { choiceBox.insertBefore( choiceRow( field, '', '' ), addBtn ); } } );
 			choiceBox.appendChild( addBtn );
 		};

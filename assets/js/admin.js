@@ -671,8 +671,7 @@
 				self.renderUpsert( src, dest ),
 				object === 'contacts' ? self.renderAccount( src, dest ) : null,
 				object === 'contacts' ? self.renderSplit( dest ) : null,
-				self.renderTrackables( crmFields, dest ),
-				self.renderCreateField( object )
+				self.renderTrackables( crmFields, dest )
 			] ) );
 		} ).catch( function ( err ) {
 			body.innerHTML = '';
@@ -910,23 +909,6 @@
 		return el( 'div', { class: 'crm-connect-util crm-connect-trackables' }, [
 			el( 'label', { class: 'crm-connect-util__check' }, [ cb, el( 'span', { text: ' ' + ( i18n.saveSource || 'Save where they came from' ) } ) ] ),
 			inline
-		] );
-	};
-
-	MappingEditor.prototype.renderCreateField = function ( object ) {
-		var self = this;
-		return el( 'div', { class: 'crm-connect-util' }, [
-			el( 'button', { type: 'button', class: 'button-link', text: i18n.newField || '+ New field', onClick: function ( e ) {
-				var label = window.prompt( i18n.newFieldPrompt || 'Name of the new field' );
-				if ( ! label ) { return; }
-				var btn = e.target;
-				btn.disabled = true;
-				api( 'crm/objects/' + encodeURIComponent( object ) + '/fields', { method: 'POST', body: JSON.stringify( { label: label, type: 'text' } ) } )
-					.then( function () { return self.crmFields( object, true ); } )
-					.then( function () { window.alert( i18n.newFieldDone || 'Added! Pick the object again to use it.' ); } )
-					.catch( function ( err ) { window.alert( err.message ); } )
-					.then( function () { btn.disabled = false; } );
-			} } )
 		] );
 	};
 

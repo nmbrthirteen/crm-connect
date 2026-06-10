@@ -80,11 +80,6 @@ final class RestController {
 					'callback'            => $this->cb( 'crm_fields' ),
 					'permission_callback' => $perm,
 				],
-				[
-					'methods'             => 'POST',
-					'callback'            => $this->cb( 'create_crm_field' ),
-					'permission_callback' => $perm,
-				],
 			]
 		);
 
@@ -217,26 +212,6 @@ final class RestController {
 		$list = $provider->list_sales_accounts();
 		$this->cache->set( $provider->key(), '__accounts', $list );
 		return new WP_REST_Response( $list );
-	}
-
-	public function create_crm_field( WP_REST_Request $request ) {
-		$object   = (string) $request['object'];
-		$provider = $this->plugin->providers()->get();
-
-		$field = new CrmField(
-			'',
-			sanitize_text_field( (string) $request->get_param( 'label' ) ),
-			(string) ( $request->get_param( 'type' ) ?: CrmField::TYPE_TEXT )
-		);
-
-		if ( $field->label === '' ) {
-			return new WP_Error( 'crm_connect_invalid', __( 'A field label is required.', 'crm-connect' ), [ 'status' => 400 ] );
-		}
-
-		$created = $provider->create_field( $object, $field );
-
-		$this->cache->forget( $provider->key(), $object );
-		return new WP_REST_Response( $created->to_array() );
 	}
 
 	public function list_profiles(): WP_REST_Response {

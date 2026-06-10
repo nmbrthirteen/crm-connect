@@ -94,7 +94,6 @@ final class Admin {
 					'saveFailed'    => __( 'Could not save.', 'crm-connect' ),
 					'testing'       => __( 'Testing…', 'crm-connect' ),
 					'connected'     => __( 'Connection OK.', 'crm-connect' ),
-					'createField'   => __( 'Create field in CRM', 'crm-connect' ),
 					'confirmDelete' => __( 'Delete this mapping?', 'crm-connect' ),
 					'loadingFields' => __( 'Loading fields…', 'crm-connect' ),
 					'notConnected'  => __( 'Connect your Freshsales account in Settings before mapping fields.', 'crm-connect' ),

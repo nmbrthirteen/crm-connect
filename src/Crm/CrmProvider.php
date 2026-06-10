@@ -15,6 +15,4 @@ interface CrmProvider {
 	public function discover_fields( string $object ): array;
 
 	public function upsert_record( string $object, array $data, array $unique = [] ): CrmResult;
-
-	public function create_field( string $object, CrmField $field ): CrmField;
 }

@@ -188,27 +188,6 @@ final class FreshsalesProvider implements CrmProvider {
 		return null;
 	}
 
-	public function create_field( string $object, CrmField $field ): CrmField {
-		$response = $this->client->post(
-			"settings/{$object}/forms/0/fields",
-			[
-				'field' => [
-					'label' => $field->label,
-					'type'  => $this->denormalize_type( $field->type ),
-				],
-			]
-		);
-		$created = (array) ( $response['field'] ?? [] );
-
-		return new CrmField(
-			(string) ( $created['name'] ?? $field->name ),
-			(string) ( $created['label'] ?? $field->label ),
-			$field->type,
-			false,
-			true
-		);
-	}
-
 	private function normalize_type( string $type ): string {
 		return match ( $type ) {
 			'number', 'decimal', 'currency' => CrmField::TYPE_NUMBER,
@@ -220,17 +199,6 @@ final class FreshsalesProvider implements CrmProvider {
 			'multiselect'                   => CrmField::TYPE_MULTISELECT,
 			'lookup', 'relationship'        => CrmField::TYPE_LOOKUP,
 			default                         => CrmField::TYPE_TEXT,
-		};
-	}
-
-	private function denormalize_type( string $type ): string {
-		return match ( $type ) {
-			CrmField::TYPE_NUMBER      => 'number',
-			CrmField::TYPE_DATE        => 'date',
-			CrmField::TYPE_CHECKBOX    => 'checkbox',
-			CrmField::TYPE_DROPDOWN    => 'dropdown',
-			CrmField::TYPE_MULTISELECT => 'multiselect',
-			default                    => 'text',
 		};
 	}
 

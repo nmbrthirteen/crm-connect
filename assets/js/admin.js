@@ -721,7 +721,7 @@
 		var renderChoices = function ( name, force ) {
 			choiceBox.innerHTML = '';
 			var field = crmFieldByName( crmFields, name ) || { name: name, choices: [] };
-			var hasMap = rule.choice_map && Object.keys( rule.choice_map ).length;
+			var hasMap = !! ( rule.choice_map && Object.keys( rule.choice_map ).length );
 			if ( ! name || ( ! isListField( field ) && ! force && ! hasMap ) ) {
 				choiceBox.style.display = 'none';
 				return;
@@ -729,17 +729,39 @@
 			choiceBox.style.display = '';
 
 			var options = srcOptions( leftKey() );
+
 			if ( options.length ) {
-				choiceBox.appendChild( el( 'div', { class: 'crm-connect-choices__auto', text: ( i18n.autoChoices || 'List field. In Freshsales this field must already have these choices, or the value will not save: ' ) + options.join( ', ' ) } ) );
+				var copyBtn = el( 'button', { type: 'button', class: 'button button-small', text: i18n.copyChoices || 'Copy choices', onClick: function () {
+					if ( navigator.clipboard && navigator.clipboard.writeText ) { navigator.clipboard.writeText( options.join( '\n' ) ); }
+					copyBtn.textContent = i18n.copied || 'Copied ✓';
+					setTimeout( function () { copyBtn.textContent = i18n.copyChoices || 'Copy choices'; }, 1500 );
+				} } );
+				var actions = el( 'div', { class: 'crm-connect-choices__actions' }, [ copyBtn ] );
+				if ( cfg.crmUrl ) {
+					actions.appendChild( el( 'a', { class: 'button button-small', href: cfg.crmUrl, target: '_blank', rel: 'noopener', text: i18n.openCrm || 'Open Freshsales settings ↗' } ) );
+				}
+				choiceBox.appendChild( el( 'div', { class: 'crm-connect-choices__auto' }, [
+					el( 'div', { class: 'crm-connect-choices__autotitle', text: i18n.autoChoices || 'List field. Freshsales must have these exact choices on this field (case-sensitive), or the value will not save:' } ),
+					el( 'div', { class: 'crm-connect-choices__chips' }, options.map( function ( o ) { return el( 'span', { class: 'crm-connect-chip', text: o } ); } ) ),
+					actions
+				] ) );
 			}
 
-			choiceBox.appendChild( el( 'div', { class: 'crm-connect-choices__hint', text: options.length ? ( i18n.choiceHintOptional || 'Optional - only to rename a value before it is sent:' ) : ( i18n.choiceHint || 'Map values (unmapped are skipped):' ) } ) );
-
+			var mapWrap = el( 'div', { class: 'crm-connect-choices__map' } );
+			mapWrap.appendChild( el( 'div', { class: 'crm-connect-choices__hint', text: options.length ? ( i18n.choiceHintOptional || 'Optional - rename a form value to match a differently spelled CRM choice:' ) : ( i18n.choiceHint || 'Map values (unmapped are skipped):' ) } ) );
 			var map = rule.choice_map || {};
-			Object.keys( map ).forEach( function ( from ) { choiceBox.appendChild( choiceRow( field, from, map[ from ] ) ); } );
-			if ( ! Object.keys( map ).length && ! options.length ) { choiceBox.appendChild( choiceRow( field, '', '' ) ); }
-			var addBtn = el( 'button', { type: 'button', class: 'button-link', text: i18n.addValue || '+ Value', onClick: function () { choiceBox.insertBefore( choiceRow( field, '', '' ), addBtn ); } } );
-			choiceBox.appendChild( addBtn );
+			Object.keys( map ).forEach( function ( from ) { mapWrap.appendChild( choiceRow( field, from, map[ from ] ) ); } );
+			if ( ! Object.keys( map ).length && ! options.length ) { mapWrap.appendChild( choiceRow( field, '', '' ) ); }
+			var addBtn = el( 'button', { type: 'button', class: 'button-link', text: i18n.addValue || '+ Value', onClick: function () { mapWrap.insertBefore( choiceRow( field, '', '' ), addBtn ); } } );
+			mapWrap.appendChild( addBtn );
+
+			if ( options.length && ! hasMap ) {
+				mapWrap.style.display = 'none';
+				choiceBox.appendChild( el( 'button', { type: 'button', class: 'button-link crm-connect-choices__toggle', text: i18n.renameValues || 'Rename a value before sending (advanced)', onClick: function () {
+					mapWrap.style.display = mapWrap.style.display === 'none' ? '' : 'none';
+				} } ) );
+			}
+			choiceBox.appendChild( mapWrap );
 		};
 
 		var crmField = combo( crmGroup( crmFields ), crmName, i18n.choose || 'Search…', function ( v ) { renderChoices( v ); } );

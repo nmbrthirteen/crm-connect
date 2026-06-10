@@ -87,6 +87,7 @@ final class Admin {
 				'nonce'       => wp_create_nonce( 'wp_rest' ),
 				'configured'  => $settings->bundle_alias() !== '' && $settings->api_key() !== '',
 				'settingsUrl' => admin_url( 'admin.php?page=' . self::SLUG ),
+				'crmUrl'      => $settings->bundle_alias() !== '' ? 'https://' . $settings->bundle_alias() . '/crm/sales/settings' : '',
 				'i18n'        => [
 					'saved'         => __( 'Saved.', 'crm-connect' ),
 					'saving'        => __( 'Saving…', 'crm-connect' ),

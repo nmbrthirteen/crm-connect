@@ -358,8 +358,16 @@
 .crm-connect-choices__hint { font-size: 12px; color: var(--crmc-muted); margin-bottom: 8px; }
 .crm-connect-choices__auto {
 	font-size: 12px; color: #0a4c2e; background: #edf7f1;
-	border-left: 3px solid #46b450; padding: 6px 9px; margin-bottom: 8px; border-radius: 4px;
+	border-left: 3px solid #46b450; padding: 9px 11px; margin-bottom: 8px; border-radius: 4px;
 }
+.crm-connect-choices__autotitle { margin-bottom: 7px; }
+.crm-connect-choices__chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 9px; }
+.crm-connect-chip {
+	display: inline-block; padding: 2px 9px; background: #fff;
+	border: 1px solid #b6ddc4; border-radius: 999px; font-size: 12px; color: #0a4c2e;
+}
+.crm-connect-choices__actions { display: flex; gap: 8px; }
+.crm-connect-choices__toggle { display: inline-block; margin: 2px 0 8px; }
 .crm-connect-choicerow {
 	display: grid; grid-template-columns: minmax(0,1fr) 18px minmax(0,1fr) 28px;
 	gap: 8px; align-items: center; margin-bottom: 6px;

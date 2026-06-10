@@ -351,23 +351,15 @@
 /* ---- List-field value mapping -------------------------------------- */
 
 .crm-connect-rowwrap { display: block; }
-.crm-connect-choices {
-	margin: 4px 0 8px 18px; padding: 10px 12px;
-	background: #f6f7f9; border: 1px solid var(--crmc-border); border-radius: 8px;
+.crm-connect-choices { margin: 4px 0 10px 18px; }
+.crm-connect-choices__note { font-size: 12px; color: var(--crmc-muted); line-height: 1.7; margin-bottom: 4px; }
+.crm-connect-choices__vals { color: #1d2327; font-weight: 600; }
+.crm-connect-linkbtn {
+	background: none; border: 0; padding: 0; margin-left: 12px;
+	color: #2271b1; cursor: pointer; font-size: 12px; text-decoration: underline;
 }
-.crm-connect-choices__hint { font-size: 12px; color: var(--crmc-muted); margin-bottom: 8px; }
-.crm-connect-choices__auto {
-	font-size: 12px; color: #0a4c2e; background: #edf7f1;
-	border-left: 3px solid #46b450; padding: 9px 11px; margin-bottom: 8px; border-radius: 4px;
-}
-.crm-connect-choices__autotitle { margin-bottom: 7px; }
-.crm-connect-choices__chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 9px; }
-.crm-connect-chip {
-	display: inline-block; padding: 2px 9px; background: #fff;
-	border: 1px solid #b6ddc4; border-radius: 999px; font-size: 12px; color: #0a4c2e;
-}
-.crm-connect-choices__actions { display: flex; gap: 8px; }
-.crm-connect-choices__toggle { display: inline-block; margin: 2px 0 8px; }
+.crm-connect-linkbtn:hover { color: #135e96; }
+.crm-connect-choices__hint { font-size: 12px; color: var(--crmc-muted); margin: 8px 0 6px; }
 .crm-connect-choicerow {
 	display: grid; grid-template-columns: minmax(0,1fr) 18px minmax(0,1fr) 28px;
 	gap: 8px; align-items: center; margin-bottom: 6px;

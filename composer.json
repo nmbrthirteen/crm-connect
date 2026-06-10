@@ -3,6 +3,12 @@
     "description": "Captures website form submissions and reliably forwards them to a CRM via configurable per-form mapping.",
     "type": "wordpress-plugin",
     "license": "GPL-2.0-or-later",
+    "authors": [
+        {
+            "name": "Nika Siradze",
+            "homepage": "https://nikusha.com"
+        }
+    ],
     "require": {
         "php": ">=8.0"
     },

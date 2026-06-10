@@ -4,7 +4,8 @@
  * Plugin URI:  https://github.com/nmbrthirteen/crm-connect
  * Description: Captures website form submissions - every field, UTM and trackable - and reliably forwards them server-side to a CRM via configurable per-form mapping.
  * Version:     0.2.4
- * Author:      nmbrthirteen
+ * Author:      Nika Siradze
+ * Author URI:  https://nikusha.com
  * Text Domain: crm-connect
  * Requires PHP: 8.0
  * License:     GPL-2.0-or-later

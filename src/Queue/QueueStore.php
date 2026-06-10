@@ -9,6 +9,8 @@ defined( 'ABSPATH' ) || exit;
 
 final class QueueStore {
 
+	private const STALE_CLAIM_MINUTES = 5;
+
 	private function table(): string {
 		return Schema::table();
 	}
@@ -40,7 +42,7 @@ final class QueueStore {
 		global $wpdb;
 		$table = $this->table();
 		$now   = $this->utc_now();
-		$stale = gmdate( 'Y-m-d H:i:s', time() - 15 * MINUTE_IN_SECONDS );
+		$stale = gmdate( 'Y-m-d H:i:s', time() - self::STALE_CLAIM_MINUTES * MINUTE_IN_SECONDS );
 		$token = wp_generate_uuid4();
 
 		$claimed = $wpdb->query(

@@ -5,7 +5,6 @@ namespace CrmConnect\Queue;
 use CrmConnect\Crm\Exception\RateLimitException;
 use CrmConnect\Crm\ProviderFactory;
 use CrmConnect\Mapping\FieldMapper;
-use CrmConnect\Mapping\MappingPlan;
 use CrmConnect\Mapping\ProfileRepository;
 use CrmConnect\Settings;
 use CrmConnect\Support\EventLog;
@@ -117,34 +116,23 @@ final class QueueWorker {
 		try {
 			$request  = [];
 			$response = [];
-			$sync     = [];
+			$choices  = [];
 
 			for ( $i = $done; $i < count( $plans ); $i++ ) {
-				$plan   = $mapper->build( $plans[ $i ], $item->submission );
-				$sync   = array_merge( $sync, $this->sync_choices( $provider, $plan ) );
-				$result = $provider->upsert_record( $plan->object, $plan->data, $plan->unique );
+				$plan    = $mapper->build( $plans[ $i ], $item->submission );
+				$choices = array_merge( $choices, $plan->choices );
+				$result  = $provider->upsert_record( $plan->object, $plan->data, $plan->unique );
 
 				$request[ $plan->object ]  = $result->request ?: $plan->data;
 				$response[ $plan->object ] = $result->response;
 				$done                      = $i + 1;
 			}
 
-			if ( $sync ) {
-				$response['_choice_sync'] = $sync;
-			}
-
 			$this->queue->mark_sent( $item->id, $request, $response );
 
 			$dropped = FieldDiff::dropped( $request, $response );
 			if ( $dropped ) {
-				EventLog::warning(
-					sprintf(
-						/* translators: 1: queue id, 2: field list */
-						__( 'Submission #%1$d delivered, but Freshsales did not store: %2$s. List fields need a mapped choice; other fields may reject the value.', 'crm-connect' ),
-						$item->id,
-						implode( ', ', $dropped )
-					)
-				);
+				EventLog::warning( $this->dropped_message( $item->id, $dropped, $choices ) );
 			}
 			return null;
 		} catch ( RateLimitException $e ) {
@@ -157,29 +145,27 @@ final class QueueWorker {
 		}
 	}
 
-	/** @return string[] sync report, surfaced in the stored response for debugging */
-	private function sync_choices( $provider, MappingPlan $plan ): array {
-		if ( ! $plan->choices || ! method_exists( $provider, 'ensure_choices' ) ) {
-			return [];
+	/**
+	 * Freshsales silently discards a dropdown value that isn't already a choice on the field,
+	 * and its API exposes field choices as read-only. So when a list value doesn't land, tell
+	 * the admin exactly which choices to add in Freshsales.
+	 *
+	 * @param array<string,string[]> $choices crm field => the form's list options
+	 */
+	private function dropped_message( int $id, array $dropped, array $choices ): string {
+		$parts = [];
+		foreach ( $dropped as $field ) {
+			$parts[] = ! empty( $choices[ $field ] )
+				? sprintf( '%s (add these choices in Freshsales: %s)', $field, implode( ', ', $choices[ $field ] ) )
+				: $field;
 		}
-		try {
-			$report = (array) $provider->ensure_choices( $plan->object, $plan->choices );
-			foreach ( $report as $line ) {
-				$line = (string) $line;
-				if ( strpos( $line, ': added ' ) !== false ) {
-					EventLog::info( sprintf( __( 'CRM list options synced - %s', 'crm-connect' ), $line ) );
-				} elseif ( strpos( $line, ': not ' ) !== false ) {
-					EventLog::warning( sprintf( __( 'CRM list field check - %s', 'crm-connect' ), $line ) );
-				}
-			}
-			return $report;
-		} catch ( RateLimitException $e ) {
-			throw $e;
-		} catch ( \Throwable $e ) {
-			// Pushing choices into the CRM is best-effort; never let it block delivery of the record.
-			EventLog::warning( sprintf( __( 'Could not sync CRM list options: %s', 'crm-connect' ), $e->getMessage() ) );
-			return [ 'sync failed: ' . $e->getMessage() ];
-		}
+
+		return sprintf(
+			/* translators: 1: queue id, 2: field list, each with the choices to add */
+			__( 'Submission #%1$d delivered, but Freshsales did not store: %2$s. For dropdowns, add the listed choices to the field in Freshsales (Admin Settings) or switch it to a Text field.', 'crm-connect' ),
+			$id,
+			implode( '; ', $parts )
+		);
 	}
 
 	private function fail( QueueItem $item, int $attempts, \Throwable $e, ?int $delay = null, int $completed = 0 ): void {

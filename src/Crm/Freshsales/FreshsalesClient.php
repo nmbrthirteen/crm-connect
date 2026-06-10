@@ -22,10 +22,6 @@ final class FreshsalesClient {
 		return $this->request( 'POST', $path, $body );
 	}
 
-	public function put( string $path, array $body ): array {
-		return $this->request( 'PUT', $path, $body );
-	}
-
 	private function request( string $method, string $path, ?array $body, array $query = [] ): array {
 		if ( $this->bundle_alias === '' || $this->api_key === '' ) {
 			throw new ApiException( 'Freshsales credentials are not configured.' );

@@ -730,7 +730,7 @@
 
 			var options = srcOptions( leftKey() );
 			if ( options.length ) {
-				choiceBox.appendChild( el( 'div', { class: 'crm-connect-choices__auto', text: ( i18n.autoChoices || 'These form options are added to the CRM field automatically: ' ) + options.join( ', ' ) } ) );
+				choiceBox.appendChild( el( 'div', { class: 'crm-connect-choices__auto', text: ( i18n.autoChoices || 'List field. In Freshsales this field must already have these choices, or the value will not save: ' ) + options.join( ', ' ) } ) );
 			}
 
 			choiceBox.appendChild( el( 'div', { class: 'crm-connect-choices__hint', text: options.length ? ( i18n.choiceHintOptional || 'Optional - only to rename a value before it is sent:' ) : ( i18n.choiceHint || 'Map values (unmapped are skipped):' ) } ) );

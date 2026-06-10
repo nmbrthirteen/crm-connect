@@ -743,7 +743,7 @@
 				if ( Object.keys( pre ).length ) { rule.choice_map = pre; hasMap = true; }
 			}
 
-			if ( options.length && ! crmChoices.length ) {
+			if ( options.length && isListField( field ) && ! crmChoices.length ) {
 				var copyBtn = el( 'button', { type: 'button', class: 'crm-connect-linkbtn', text: i18n.copyChoices || 'Copy choices', onClick: function () {
 					if ( navigator.clipboard && navigator.clipboard.writeText ) { navigator.clipboard.writeText( options.join( '\n' ) ); }
 					copyBtn.textContent = i18n.copied || 'Copied';

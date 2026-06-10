@@ -7,7 +7,7 @@ defined( 'ABSPATH' ) || exit;
 final class SchemaCache {
 
 	private const PREFIX  = 'crm_connect_fields_';
-	private const VERSION = '4';
+	private const VERSION = '5';
 	private const TTL     = 6 * HOUR_IN_SECONDS;
 
 	public function get( string $provider, string $object ): ?array {

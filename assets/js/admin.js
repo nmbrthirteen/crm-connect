@@ -597,6 +597,9 @@
 
 		wrap.appendChild( el( 'div', { class: 'crm-connect-destination__head' }, [
 			el( 'label', {}, [ el( 'span', { class: 'crm-connect-label', text: i18n.addAs || 'Add as' } ), objSelect ] ),
+			el( 'button', { type: 'button', class: 'crmc-btn crmc-btn--ghost crmc-btn--sm', text: i18n.refreshFields || 'Refresh fields', onClick: function () {
+				if ( objSelect.value ) { self.populateDestination( profileNode, body, objSelect.value, dest, true ); }
+			} } ),
 			el( 'button', { type: 'button', class: 'crmc-btn crmc-btn--danger', text: i18n.remove || 'Remove', onClick: function () {
 				confirmDialog( {
 					title: i18n.remTitle || 'Remove this object?',
@@ -611,7 +614,7 @@
 		return wrap;
 	};
 
-	MappingEditor.prototype.populateDestination = function ( profileNode, body, object, dest ) {
+	MappingEditor.prototype.populateDestination = function ( profileNode, body, object, dest, refresh ) {
 		var self = this;
 		body.innerHTML = '';
 		if ( ! object ) { return; }
@@ -621,7 +624,7 @@
 
 		body.appendChild( el( 'p', { class: 'crm-connect-loading', text: i18n.loadingFields || 'Loading…' } ) );
 
-		Promise.all( [ this.crmFields( object ), this.formFields( formId ) ] ).then( function ( res ) {
+		Promise.all( [ this.crmFields( object, refresh ), this.formFields( formId ) ] ).then( function ( res ) {
 			body.innerHTML = '';
 			var crmFields = res[ 0 ] || [];
 			var src = self.sourceOptions( res[ 1 ] );

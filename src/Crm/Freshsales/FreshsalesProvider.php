@@ -87,7 +87,7 @@ final class FreshsalesProvider implements CrmProvider {
 		}
 
 		$singular = self::SINGULAR[ $object ] ?? rtrim( $object, 's' );
-		$body     = [ $singular => $data ];
+		$body     = [ $singular => $this->with_custom_fields( $data ) ];
 
 		if ( $unique ) {
 			$body['unique_identifier'] = $unique;
@@ -101,6 +101,23 @@ final class FreshsalesProvider implements CrmProvider {
 		$status = ! empty( $response['updated'] ) ? CrmResult::UPDATED : CrmResult::CREATED;
 
 		return new CrmResult( $status, $id, $response, $body );
+	}
+
+	/**
+	 * Freshsales expects custom fields under custom_field.
+	 */
+	private function with_custom_fields( array $data ): array {
+		$custom = [];
+		foreach ( $data as $key => $value ) {
+			if ( strpos( (string) $key, 'cf_' ) === 0 ) {
+				$custom[ $key ] = $value;
+				unset( $data[ $key ] );
+			}
+		}
+		if ( $custom ) {
+			$data['custom_field'] = $custom;
+		}
+		return $data;
 	}
 
 	public function list_sales_accounts(): array {

@@ -24,6 +24,10 @@ final class FieldDiff {
 			$fields   = is_array( $sent[ $singular ] ?? null ) ? $sent[ $singular ] : $sent;
 			$entity   = $response[ $object ][ $singular ] ?? [];
 			$custom   = is_array( $entity['custom_field'] ?? null ) ? $entity['custom_field'] : [];
+			$fields   = array_merge(
+				$fields,
+				is_array( $fields['custom_field'] ?? null ) ? $fields['custom_field'] : []
+			);
 
 			foreach ( $fields as $field => $value ) {
 				if ( strpos( (string) $field, 'cf_' ) !== 0 ) {

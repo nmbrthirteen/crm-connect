@@ -150,11 +150,11 @@
 	}
 
 	var TRACKING = [
-		[ '_attr_last_params_utm_source', 'Campaign source (utm_source)', [ 'utmsource' ] ],
-		[ '_attr_last_params_utm_medium', 'Campaign medium (utm_medium)', [ 'utmmedium' ] ],
-		[ '_attr_last_params_utm_campaign', 'Campaign name (utm_campaign)', [ 'utmcampaign' ] ],
-		[ '_attr_last_params_utm_term', 'Campaign term (utm_term)', [ 'utmterm', 'keyword' ] ],
-		[ '_attr_last_params_utm_content', 'Campaign content (utm_content)', [ 'utmcontent' ] ],
+		[ '_attr_last_params_utm_source', 'Campaign source (utm_source)', [ 'utmsource', 'lastsource', 'source' ] ],
+		[ '_attr_last_params_utm_medium', 'Campaign medium (utm_medium)', [ 'utmmedium', 'lastmedium', 'medium' ] ],
+		[ '_attr_last_params_utm_campaign', 'Campaign name (utm_campaign)', [ 'utmcampaign', 'lastcampaign', 'campaign' ] ],
+		[ '_attr_last_params_utm_term', 'Campaign term (utm_term)', [ 'utmterm', 'keyword', 'term' ] ],
+		[ '_attr_last_params_utm_content', 'Campaign content (utm_content)', [ 'utmcontent', 'content' ] ],
 		[ '_attr_last_params_gclid', 'Google click ID', [ 'gclid', 'clickid' ] ],
 		[ '_attr_last_landing_page', 'Landing page', [ 'fulllandingpage', 'landingpage' ] ],
 		[ '_meta_page_url', 'Page they submitted on', [ 'submissionpage', 'pageurl' ] ]
@@ -664,7 +664,7 @@
 				el( 'button', { type: 'button', class: 'button-link', text: i18n.addTracking || '+ Tracking', onClick: function () {
 					TRACKING.forEach( function ( t ) {
 						var target = ( t[ 2 ] && pickCrm( textCrm, t[ 2 ] ) ) || autoMatch( t[ 1 ], t[ 0 ], textCrm );
-						addRow( target, { source: 'field', key: t[ 0 ] } );
+						if ( target ) { addRow( target, { source: 'field', key: t[ 0 ] } ); }
 					} );
 				} } )
 			] ) );

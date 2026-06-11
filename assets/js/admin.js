@@ -150,15 +150,14 @@
 	}
 
 	var TRACKING = [
-		[ '_attr_last_params_utm_source', 'Campaign source (utm_source)', [ 'lastsource', 'source' ] ],
-		[ '_attr_last_params_utm_medium', 'Campaign medium (utm_medium)', [ 'lastmedium', 'medium' ] ],
-		[ '_attr_last_params_utm_campaign', 'Campaign name (utm_campaign)', [ 'lastcampaign', 'campaign' ] ],
-		[ '_attr_last_params_utm_term', 'Campaign term (utm_term)', [ 'keyword', 'term' ] ],
-		[ '_attr_last_params_utm_content', 'Campaign content (utm_content)', [ 'content' ] ],
+		[ '_attr_last_params_utm_source', 'Campaign source (utm_source)', [ 'utmsource' ] ],
+		[ '_attr_last_params_utm_medium', 'Campaign medium (utm_medium)', [ 'utmmedium' ] ],
+		[ '_attr_last_params_utm_campaign', 'Campaign name (utm_campaign)', [ 'utmcampaign' ] ],
+		[ '_attr_last_params_utm_term', 'Campaign term (utm_term)', [ 'utmterm', 'keyword' ] ],
+		[ '_attr_last_params_utm_content', 'Campaign content (utm_content)', [ 'utmcontent' ] ],
 		[ '_attr_last_params_gclid', 'Google click ID', [ 'gclid', 'clickid' ] ],
-		[ '_attr_last_referrer', 'Referrer', [ 'referrer', 'firstsource' ] ],
-		[ '_attr_last_landing_page', 'Landing page', [ 'landingpage', 'firstsource' ] ],
-		[ '_meta_page_url', 'Page they submitted on', [ 'createdfrompage', 'pageurl' ] ]
+		[ '_attr_last_landing_page', 'Landing page', [ 'fulllandingpage', 'landingpage' ] ],
+		[ '_meta_page_url', 'Page they submitted on', [ 'submissionpage', 'pageurl' ] ]
 	];
 
 	function combo( groups, value, placeholder, onChange, allowFreeText ) {

@@ -216,15 +216,16 @@ final class FreshsalesProvider implements CrmProvider {
 	}
 
 	private function ensure_sales_account( string $name ): ?int {
-		$found = $this->find_sales_account( $name );
-		if ( $found ) {
-			return $found;
-		}
-
 		try {
-			$response = $this->client->post( 'sales_accounts', [ 'sales_account' => [ 'name' => $name ] ] );
-			$account  = $response['sales_account'] ?? [];
-			$id       = isset( $account['id'] ) ? (int) $account['id'] : null;
+			$response = $this->client->post(
+				'sales_accounts/upsert',
+				[
+					'sales_account'     => [ 'name' => $name ],
+					'unique_identifier' => [ 'name' => $name ],
+				]
+			);
+			$account = $response['sales_account'] ?? [];
+			$id      = isset( $account['id'] ) ? (int) $account['id'] : null;
 			if ( $id && is_array( $this->accounts_cache ) ) {
 				$this->accounts_cache[] = [ 'id' => (string) $id, 'name' => $name ];
 			}
@@ -233,22 +234,13 @@ final class FreshsalesProvider implements CrmProvider {
 			\CrmConnect\Support\EventLog::warning(
 				sprintf(
 					/* translators: 1: company name, 2: error */
-					__( 'Could not create the "%1$s" company in Freshsales: %2$s', 'crm-connect' ),
+					__( 'Could not link the "%1$s" company in Freshsales: %2$s', 'crm-connect' ),
 					$name,
 					$e->getMessage()
 				)
 			);
 			return null;
 		}
-	}
-
-	private function find_sales_account( string $name ): ?int {
-		foreach ( $this->list_sales_accounts() as $account ) {
-			if ( isset( $account['name'] ) && strcasecmp( (string) $account['name'], $name ) === 0 ) {
-				return (int) $account['id'];
-			}
-		}
-		return null;
 	}
 
 	private function normalize_type( string $type ): string {

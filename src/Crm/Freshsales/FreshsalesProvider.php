@@ -230,6 +230,14 @@ final class FreshsalesProvider implements CrmProvider {
 			}
 			return $id;
 		} catch ( \Throwable $e ) {
+			\CrmConnect\Support\EventLog::warning(
+				sprintf(
+					/* translators: 1: company name, 2: error */
+					__( 'Could not create the "%1$s" company in Freshsales: %2$s', 'crm-connect' ),
+					$name,
+					$e->getMessage()
+				)
+			);
 			return null;
 		}
 	}

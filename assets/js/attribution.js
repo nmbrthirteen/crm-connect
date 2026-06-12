@@ -39,6 +39,7 @@
 			params: params,
 			referrer: document.referrer || '',
 			landing_page: window.location.href,
+			landing_page_path: window.location.origin + window.location.pathname,
 			timestamp: new Date().toISOString()
 		};
 	}

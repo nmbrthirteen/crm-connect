@@ -645,6 +645,23 @@
 				rows.querySelectorAll( '.crm-connect-rowwrap' ).forEach( function ( r ) { r.remove(); } );
 				src.fields.forEach( function ( f ) { addRow( autoMatch( f.value, f.label, crmFields ), { source: 'field', key: f.value } ); } );
 			};
+			var fillMissing = function () {
+				var usedSrc = {}, usedCrm = {};
+				rows.querySelectorAll( '.crm-connect-rowwrap' ).forEach( function ( wrap ) {
+					var s = wrap.querySelector( '.crm-connect-row__src .crmc-combo' );
+					var c = wrap.querySelector( '.crm-connect-row__crm .crmc-combo' );
+					if ( s && s.dataset.value ) { usedSrc[ s.dataset.value ] = true; }
+					if ( c && c.dataset.value ) { usedCrm[ c.dataset.value ] = true; }
+				} );
+				var tryAdd = function ( key, target ) {
+					if ( ! key || usedSrc[ key ] || ! target || usedCrm[ target ] ) { return; }
+					usedSrc[ key ] = true;
+					usedCrm[ target ] = true;
+					addRow( target, { source: 'field', key: key } );
+				};
+				src.fields.forEach( function ( f ) { tryAdd( f.value, autoMatch( f.value, f.label, crmFields ) ); } );
+				TRACKING.forEach( function ( t ) { tryAdd( t[ 0 ], ( t[ 2 ] && pickCrm( textCrm, t[ 2 ] ) ) || autoMatch( t[ 1 ], t[ 0 ], textCrm ) ); } );
+			};
 
 			var existing = dest.field_map || {};
 			var mappedKeys = Object.keys( existing ).filter( function ( k ) { return k !== '__sales_account' && k !== '__no_split'; } );
@@ -661,6 +678,7 @@
 				el( 'button', { type: 'button', class: 'button-link', text: i18n.addField || '+ Field', onClick: function () { addRow( '', { source: 'field' } ); } } ),
 				el( 'button', { type: 'button', class: 'button-link', text: i18n.addStatic || '+ Fixed text', onClick: function () { addRow( '', { source: 'static', value: '' } ); } } ),
 				el( 'button', { type: 'button', class: 'button-link', text: i18n.autoMap || 'Auto-match', onClick: autofill } ),
+				el( 'button', { type: 'button', class: 'button-link', text: i18n.fillMissing || 'Fill missing', onClick: fillMissing } ),
 				el( 'button', { type: 'button', class: 'button-link', text: i18n.addTracking || '+ Tracking', onClick: function () {
 					TRACKING.forEach( function ( t ) {
 						var target = ( t[ 2 ] && pickCrm( textCrm, t[ 2 ] ) ) || autoMatch( t[ 1 ], t[ 0 ], textCrm );

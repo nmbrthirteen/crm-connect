@@ -26,9 +26,10 @@ final class Trackables {
 			foreach ( self::PARAMS as $param ) {
 				$fields[ "_attr_{$touch}_params_{$param}" ] = "{$label}: {$param}";
 			}
-			$fields[ "_attr_{$touch}_referrer" ]     = "{$label}: referrer";
-			$fields[ "_attr_{$touch}_landing_page" ] = "{$label}: landing page";
-			$fields[ "_attr_{$touch}_timestamp" ]    = "{$label}: timestamp";
+			$fields[ "_attr_{$touch}_referrer" ]          = "{$label}: referrer";
+			$fields[ "_attr_{$touch}_landing_page" ]      = "{$label}: landing page";
+			$fields[ "_attr_{$touch}_landing_page_path" ] = "{$label}: landing page (no params)";
+			$fields[ "_attr_{$touch}_timestamp" ]         = "{$label}: timestamp";
 		}
 
 		$fields['_meta_page_url']     = 'Submission page URL';

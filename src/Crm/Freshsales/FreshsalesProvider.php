@@ -6,6 +6,7 @@ use CrmConnect\Crm\CrmField;
 use CrmConnect\Crm\CrmObjectType;
 use CrmConnect\Crm\CrmProvider;
 use CrmConnect\Crm\CrmResult;
+use CrmConnect\Crm\Exception\ApiException;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -87,13 +88,29 @@ final class FreshsalesProvider implements CrmProvider {
 		}
 
 		$singular = self::SINGULAR[ $object ] ?? rtrim( $object, 's' );
-		$body     = [ $singular => $this->with_custom_fields( $data ) ];
 
+		$response = null;
+		$limits   = array_values( (array) apply_filters( 'crm_connect_field_max_lengths', [ 800, 255 ] ) );
+		for ( $attempt = 0; ; $attempt++ ) {
+			try {
+				$response = $this->post_record( $object, $singular, $data, $unique );
+				break;
+			} catch ( ApiException $e ) {
+				$overlong = $this->overlong_fields( $e->getMessage() );
+				if ( ! $overlong || ! isset( $limits[ $attempt ] ) ) {
+					throw $e;
+				}
+				foreach ( $overlong as $field ) {
+					if ( is_string( $data[ $field ] ?? null ) ) {
+						$data[ $field ] = $this->truncate_value( $data[ $field ], (int) $limits[ $attempt ] );
+					}
+				}
+			}
+		}
+
+		$body = [ $singular => $this->with_custom_fields( $data ) ];
 		if ( $unique ) {
 			$body['unique_identifier'] = $unique;
-			$response = $this->client->post( "{$object}/upsert", $body );
-		} else {
-			$response = $this->client->post( $object, $body );
 		}
 
 		$entity = $response[ $singular ] ?? [];
@@ -101,6 +118,27 @@ final class FreshsalesProvider implements CrmProvider {
 		$status = ! empty( $response['updated'] ) ? CrmResult::UPDATED : CrmResult::CREATED;
 
 		return new CrmResult( $status, $id, $response, $body );
+	}
+
+	private function post_record( string $object, string $singular, array $data, array $unique ): array {
+		$body = [ $singular => $this->with_custom_fields( $data ) ];
+		if ( $unique ) {
+			$body['unique_identifier'] = $unique;
+			return $this->client->post( "{$object}/upsert", $body );
+		}
+		return $this->client->post( $object, $body );
+	}
+
+	/** @return string[] field names Freshsales rejected for being too long */
+	private function overlong_fields( string $message ): array {
+		if ( ! preg_match_all( '/value for (\S+?) is not in required length/i', $message, $matches ) ) {
+			return [];
+		}
+		return array_values( array_unique( $matches[1] ) );
+	}
+
+	private function truncate_value( string $value, int $limit ): string {
+		return function_exists( 'mb_substr' ) ? mb_substr( $value, 0, $limit ) : substr( $value, 0, $limit );
 	}
 
 	/**

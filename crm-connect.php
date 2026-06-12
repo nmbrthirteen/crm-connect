@@ -3,7 +3,7 @@
  * Plugin Name: CRM Connect
  * Plugin URI:  https://github.com/nmbrthirteen/crm-connect
  * Description: Captures website form submissions - every field, UTM and trackable - and reliably forwards them server-side to a CRM via configurable per-form mapping.
- * Version:     0.4.5
+ * Version:     0.4.6
  * Author:      Nika Siradze
  * Author URI:  https://nikusha.com
  * Text Domain: crm-connect
@@ -14,7 +14,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'CRM_CONNECT_VERSION', '0.4.5' );
+define( 'CRM_CONNECT_VERSION', '0.4.6' );
 define( 'CRM_CONNECT_FILE', __FILE__ );
 define( 'CRM_CONNECT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'CRM_CONNECT_URL', plugin_dir_url( __FILE__ ) );

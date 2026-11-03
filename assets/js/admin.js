@@ -964,6 +964,19 @@
 			} );
 		} );
 
+		document.querySelectorAll( '.crm-connect-erase' ).forEach( function ( link ) {
+			link.addEventListener( 'click', function ( event ) {
+				event.preventDefault();
+				confirmDialog( {
+					title: i18n.eraseTitle || 'Erase this submission?',
+					message: i18n.eraseMsg || 'This permanently deletes the stored data and its log entries.',
+					confirmText: i18n.erase || 'Erase'
+				} ).then( function ( ok ) {
+					if ( ok ) { window.location.href = link.href; }
+				} );
+			} );
+		} );
+
 		document.querySelectorAll( '.crm-connect-copy' ).forEach( function ( btn ) {
 			btn.addEventListener( 'click', function () {
 				var cell = btn.closest( 'td' );

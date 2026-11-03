@@ -18,6 +18,7 @@ final class QueueWorker {
 	private const BATCH        = 20;
 	private const MAX_ATTEMPTS = 6;
 	private const PAUSE_KEY    = 'crm_connect_paused';
+	private const FAILURES_KEY = 'crm_connect_consecutive_failures';
 
 	public function __construct(
 		private QueueStore $queue,
@@ -91,15 +92,20 @@ final class QueueWorker {
 		$items    = $this->queue->claim_due( self::BATCH );
 
 		foreach ( $items as $i => $item ) {
+			// A slow batch must not let rows claimed at its start look stale to another worker.
+			$this->queue->touch( array_map( static fn ( $it ) => $it->id, array_slice( $items, $i ) ) );
+
 			$pause = $this->process( $item, $provider, $mapper );
+			if ( $pause === null && $this->maybe_autopause() ) {
+				$pause = 0;
+			}
+
 			if ( $pause !== null ) {
 				$rest = array_slice( $items, $i + 1 );
 				$this->queue->release( array_map( static fn ( $it ) => $it->id, $rest ), $pause );
 				break;
 			}
 		}
-
-		$this->maybe_autopause();
 	}
 
 	private function process( QueueItem $item, $provider, FieldMapper $mapper ): ?int {
@@ -109,6 +115,11 @@ final class QueueWorker {
 			foreach ( $profile->destinations as $destination ) {
 				$plans[] = $destination;
 			}
+		}
+
+		if ( ! $plans ) {
+			$this->queue->mark_unmapped( $item->id );
+			return null;
 		}
 
 		$done = $item->completed;
@@ -129,18 +140,19 @@ final class QueueWorker {
 			}
 
 			$this->queue->mark_sent( $item->id, $request, $response );
+			update_option( self::FAILURES_KEY, 0, false );
 
 			$dropped = FieldDiff::dropped( $request, $response );
 			if ( $dropped ) {
-				EventLog::warning( $this->dropped_message( $item->id, $dropped, $choices ) );
+				EventLog::warning( $this->dropped_message( $item->id, $dropped, $choices ), $item->id );
 			}
 			return null;
 		} catch ( RateLimitException $e ) {
 			$delay = max( $this->backoff( $attempts ), $e->retry_after );
-			$this->fail( $item, $attempts, $e, $delay, $done );
+			$this->queue->mark_rate_limited( $item->id, $e->getMessage(), $this->future( $delay ), $done );
 			return $delay;
 		} catch ( \Throwable $e ) {
-			$this->fail( $item, $attempts, $e, null, $done );
+			$this->fail( $item, $attempts, $e, $done );
 			return null;
 		}
 	}
@@ -168,12 +180,14 @@ final class QueueWorker {
 		);
 	}
 
-	private function fail( QueueItem $item, int $attempts, \Throwable $e, ?int $delay = null, int $completed = 0 ): void {
+	private function fail( QueueItem $item, int $attempts, \Throwable $e, int $completed = 0 ): void {
+		update_option( self::FAILURES_KEY, (int) get_option( self::FAILURES_KEY, 0 ) + 1, false );
+
 		if ( $attempts >= self::MAX_ATTEMPTS ) {
 			$this->queue->mark_dead_letter( $item->id, $attempts, $e->getMessage(), $completed );
 			do_action( 'crm_connect_dead_letter', $item, $e );
 		} else {
-			$this->queue->mark_retry( $item->id, $attempts, $e->getMessage(), $this->future( $delay ?? $this->backoff( $attempts ) ), $completed );
+			$this->queue->mark_retry( $item->id, $attempts, $e->getMessage(), $this->future( $this->backoff( $attempts ) ), $completed );
 		}
 	}
 
@@ -185,23 +199,29 @@ final class QueueWorker {
 		return gmdate( 'Y-m-d H:i:s', time() + max( 1, $seconds ) );
 	}
 
-	private function maybe_autopause(): void {
+	/** Pauses once failed attempts in a row reach the threshold. Only Resume lifts it. */
+	private function maybe_autopause(): bool {
 		$threshold = $this->settings->autopause_threshold();
-		if ( $threshold > 0 && $this->queue->consecutive_dead_letters( $threshold ) >= $threshold ) {
-			set_transient( self::PAUSE_KEY, 1, DAY_IN_SECONDS );
-			do_action( 'crm_connect_worker_paused', $threshold );
+		if ( $threshold <= 0 || (int) get_option( self::FAILURES_KEY, 0 ) < $threshold ) {
+			return false;
 		}
+
+		update_option( self::PAUSE_KEY, 1, false );
+		update_option( self::FAILURES_KEY, 0, false );
+		do_action( 'crm_connect_worker_paused', $threshold );
+		return true;
 	}
 
 	private function is_paused(): bool {
-		return (bool) get_transient( self::PAUSE_KEY );
+		return self::is_worker_paused();
 	}
 
 	public static function is_worker_paused(): bool {
-		return (bool) get_transient( self::PAUSE_KEY );
+		return (bool) get_option( self::PAUSE_KEY, false );
 	}
 
 	public static function resume(): void {
-		delete_transient( self::PAUSE_KEY );
+		delete_option( self::PAUSE_KEY );
+		update_option( self::FAILURES_KEY, 0, false );
 	}
 }

@@ -2,6 +2,7 @@
 
 namespace CrmConnect\Capture;
 
+use CrmConnect\Database\Schema;
 use CrmConnect\Mapping\ProfileRepository;
 use CrmConnect\Queue\QueueStore;
 
@@ -49,6 +50,7 @@ final class CaptureService {
 
 	private function handle( Submission $submission ): void {
 		if ( ! $this->profiles->has_for_form( $submission->form_id, $submission->form_name ) ) {
+			$this->queue->enqueue( $submission, Schema::STATUS_UNMAPPED );
 			return;
 		}
 		$this->queue->enqueue( $submission );

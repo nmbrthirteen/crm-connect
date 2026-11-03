@@ -25,6 +25,7 @@ $labels = [
 	'sent'        => __( 'Sent', 'crm-connect' ),
 	'failed'      => __( 'Retrying', 'crm-connect' ),
 	'dead_letter' => __( 'Failed', 'crm-connect' ),
+	'unmapped'    => __( 'Unmapped', 'crm-connect' ),
 ];
 
 $pages = (int) ceil( $total / max( 1, $per_page ) );
@@ -36,6 +37,10 @@ $pages = (int) ceil( $total / max( 1, $per_page ) );
 		<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Re-queued for delivery.', 'crm-connect' ); ?></p></div>
 	<?php elseif ( $notice === 'resumed' ) : ?>
 		<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Delivery resumed.', 'crm-connect' ); ?></p></div>
+	<?php elseif ( $notice === 'erased' ) : ?>
+		<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Submission erased.', 'crm-connect' ); ?></p></div>
+	<?php elseif ( $notice === 'erase_failed' ) : ?>
+		<div class="notice notice-error is-dismissible"><p><?php esc_html_e( 'Could not erase the submission. It may be mid-delivery or already gone. Try again in a minute.', 'crm-connect' ); ?></p></div>
 	<?php elseif ( $notice === 'log_cleared' ) : ?>
 		<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'System log cleared.', 'crm-connect' ); ?></p></div>
 	<?php endif; ?>
@@ -78,7 +83,7 @@ $pages = (int) ceil( $total / max( 1, $per_page ) );
 				<th style="width:70px;"><?php esc_html_e( 'Tries', 'crm-connect' ); ?></th>
 				<th style="width:160px;"><?php esc_html_e( 'Created', 'crm-connect' ); ?></th>
 				<th style="width:110px;"><?php esc_html_e( 'Data', 'crm-connect' ); ?></th>
-				<th style="width:90px;"></th>
+				<th style="width:140px;"></th>
 			</tr>
 		</thead>
 		<tbody>
@@ -117,8 +122,11 @@ $pages = (int) ceil( $total / max( 1, $per_page ) );
 				<td><?php echo esc_html( get_date_from_gmt( $row->created_at, 'Y-m-d H:i' ) ); ?></td>
 				<td><button type="button" class="button-link crm-connect-view"><?php esc_html_e( 'View data', 'crm-connect' ); ?></button></td>
 				<td>
-					<?php if ( in_array( $row->status, [ 'failed', 'dead_letter', 'sent' ], true ) ) : ?>
+					<?php if ( in_array( $row->status, [ 'failed', 'dead_letter', 'sent', 'unmapped' ], true ) ) : ?>
 						<a class="crmc-btn crmc-btn--ghost crmc-btn--sm" href="<?php echo esc_url( wp_nonce_url( add_query_arg( [ 'action' => 'crm_connect_retry', 'id' => (int) $row->id ], $post ), 'crm_connect_retry_' . (int) $row->id ) ); ?>"><?php esc_html_e( 'Retry', 'crm-connect' ); ?></a>
+					<?php endif; ?>
+					<?php if ( $row->status !== 'sending' ) : ?>
+						<a class="crmc-btn crmc-btn--ghost crmc-btn--sm crm-connect-erase" href="<?php echo esc_url( wp_nonce_url( add_query_arg( [ 'action' => 'crm_connect_erase', 'id' => (int) $row->id ], $post ), 'crm_connect_erase_' . (int) $row->id ) ); ?>"><?php esc_html_e( 'Erase', 'crm-connect' ); ?></a>
 					<?php endif; ?>
 				</td>
 			</tr>

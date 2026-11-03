@@ -27,7 +27,7 @@ final class RetentionCron {
 	public function run(): void {
 		$days = $this->settings->retention_days();
 		if ( $days > 0 ) {
-			$this->queue->purge_older_than( $days );
+			$this->queue->purge_older_than( $days, $this->settings->purge_dead_letters() );
 		}
 	}
 }

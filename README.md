@@ -48,7 +48,9 @@ Form submit ─▶ FormSource (Elementor) ─▶ CaptureService ─▶ QueueStor
 - **429-aware**: honors Freshsales' `Retry-After`; schema reads are cached (rate-limit budget is 1000/hr).
 - **Crash recovery**: items stuck in `sending` for >5 min are re-claimed.
 - **Auto-pause** after N consecutive failures + email/Slack alert; manual resume.
-- **Retention purge** of old sent rows (configurable, default 180 days).
+- **Retention purge** of old sent rows (configurable, default 180 days). Failed rows are kept unless you opt in to purging them.
+- **Unmapped forms are stored**, not dropped: a submission from a form without a mapping is saved with status `unmapped` and can be sent with **Retry** once a mapping exists.
+- **Erase**: remove one submission's stored data and log entries from the Submissions screen (GDPR erasure).
 
 ## Releases & updates
 
@@ -71,4 +73,3 @@ GPL-2.0-or-later. See [`LICENSE`](./LICENSE).
 - **Reconciliation cron** against Elementor's `wp_e_submissions` tables (defense-in-depth backfill if the hook itself ever fatals). Deferred pending verification of Elementor's submission-table schema.
 - **Deal orchestration**: a Deal needs `name`, `amount`, `sales_account_id`. The lookup-or-create-Sales-Account-by-company step is not yet wired - currently Deal fields are mapped directly like any object.
 - **`create_field` form id**: Freshsales' custom-field endpoint path (`settings/<entity>/forms/<form_id>/fields`) uses a placeholder form id `0`; verify against a live account.
-- Choice-mapping UI for CRM dropdown fields (value → choice) is stubbed; mapping currently passes raw values (unmatched values fall to the catch-all).

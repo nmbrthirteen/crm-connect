@@ -94,8 +94,7 @@
 .crm-connect-field .crm-connect-form-select { min-width: 280px; max-width: 420px; }
 
 .crm-connect-label {
-	font-size: 11px; font-weight: 600; text-transform: uppercase;
-	letter-spacing: .04em; color: var(--crmc-muted);
+	font-size: 11px; font-weight: 600; color: var(--crmc-muted);
 }
 
 .crm-connect-profile__actions { display: flex; align-items: center; gap: 12px; white-space: nowrap; }
@@ -117,7 +116,7 @@
 	margin-bottom: 14px;
 }
 .crm-connect-destination__head label { display: inline-flex; align-items: center; gap: 8px; }
-.crm-connect-destination__head .crm-connect-label { text-transform: none; font-size: 12px; }
+.crm-connect-destination__head .crm-connect-label { font-size: 12px; }
 
 /* ---- Field map grid ------------------------------------------------- */
 
@@ -136,8 +135,7 @@
 }
 .crm-connect-row__map:hover { background: #eef0f3; color: var(--crmc-accent); }
 .crm-connect-row--head {
-	font-size: 10.5px; font-weight: 700; text-transform: uppercase;
-	letter-spacing: .05em; color: #8a8f98; margin-bottom: 2px;
+	font-size: 10.5px; font-weight: 700; color: #8a8f98; margin-bottom: 2px;
 }
 .crm-connect-row__src select,
 .crm-connect-row__src input,
@@ -164,8 +162,7 @@
 	border-radius: 8px;
 }
 .crm-connect-utils__title {
-	display: block; font-size: 10.5px; font-weight: 700; text-transform: uppercase;
-	letter-spacing: .05em; color: #8a8f98; margin-bottom: 10px;
+	display: block; font-size: 10.5px; font-weight: 700; color: #8a8f98; margin-bottom: 10px;
 }
 .crm-connect-util { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 8px 0; }
 .crm-connect-util__check { display: inline-flex; align-items: center; gap: 7px; font-weight: 500; cursor: pointer; }
@@ -185,12 +182,13 @@
 
 .crm-connect-badge {
 	display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px;
-	font-weight: 600; text-transform: uppercase; letter-spacing: .02em;
+	font-weight: 600;
 	background: #f0f0f1; color: #50575e;
 }
 .crm-connect-badge--sent { background: #edfaef; color: #00a32a; }
 .crm-connect-badge--failed { background: #fcf3e6; color: #bd6b00; }
 .crm-connect-badge--dead_letter { background: #fcebec; color: #d63638; }
+.crm-connect-badge--unmapped { background: #f0f0f1; color: #50575e; }
 .crm-connect-badge--queued,
 .crm-connect-badge--sending { background: #e8f0fb; color: #2271b1; }
 
@@ -210,7 +208,7 @@
 	background: #fff; border: 1px solid var(--crmc-border-strong); border-radius: 9px;
 	box-shadow: 0 10px 30px rgba( 16, 24, 40, .14 ); padding: 5px;
 }
-.crmc-combo__group { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #9aa0a8; padding: 7px 9px 3px; }
+.crmc-combo__group { font-size: 10px; font-weight: 700; color: #9aa0a8; padding: 7px 9px 3px; }
 .crmc-combo__opt { padding: 8px 10px; border-radius: 7px; cursor: pointer; font-size: 13px; color: var(--crmc-ink); }
 .crmc-combo__opt:hover { background: var(--crmc-accent-weak); }
 .crmc-combo__opt.is-sel { background: var(--crmc-accent-weak); font-weight: 600; }
@@ -316,7 +314,7 @@
 }
 .crmc-table { width: 100%; border-collapse: collapse; }
 .crmc-table thead th {
-	text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+	text-align: left; font-size: 11px; font-weight: 700;
 	color: #8a8f98; padding: 12px 18px; background: #f6f7f9; border-bottom: 1px solid var(--crmc-border);
 }
 .crmc-table tbody td { padding: 14px 18px; border-top: 1px solid var(--crmc-border); font-size: 14px; vertical-align: middle; }
@@ -372,8 +370,7 @@
 .crm-connect-detailrow > td { background: #fbfbfc; padding: 14px 18px !important; }
 .crm-connect-detail__cols { display: grid; grid-template-columns: repeat( 3, 1fr ); gap: 12px; }
 .crm-connect-detail__col h4 {
-	margin: 0 0 6px; font-size: 11px; font-weight: 700; text-transform: uppercase;
-	letter-spacing: .04em; color: #8a8f98;
+	margin: 0 0 6px; font-size: 11px; font-weight: 700; color: #8a8f98;
 }
 .crm-connect-detail__col .crm-connect-pre { max-height: 320px; margin: 0; }
 .crm-connect-copy { margin-top: 12px; }

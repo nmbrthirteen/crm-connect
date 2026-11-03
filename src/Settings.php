@@ -45,6 +45,7 @@ final class Settings {
 		return $stored === '' ? '' : Crypto::decrypt( $stored );
 	}
 
+	/** @throws \RuntimeException When wp-config.php has no usable AUTH_KEY and AUTH_SALT. */
 	public function set_api_key( string $key ): void {
 		$this->set( 'api_key', $key === '' ? '' : Crypto::encrypt( $key ) );
 	}
@@ -60,6 +61,18 @@ final class Settings {
 
 	public function retention_days(): int {
 		return (int) $this->get( 'retention_days', 180 );
+	}
+
+	public function purge_dead_letters(): bool {
+		return (bool) $this->get( 'purge_dead_letters', false );
+	}
+
+	/** Re-encrypts a key stored in an older format. Does nothing when it is current or empty. */
+	public function upgrade_api_key_storage(): void {
+		$stored = (string) $this->get( 'api_key', '' );
+		if ( $stored !== '' && ! Crypto::is_current( $stored ) ) {
+			$this->set_api_key( $this->api_key() );
+		}
 	}
 
 	public function autopause_threshold(): int {

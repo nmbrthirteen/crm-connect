@@ -15,24 +15,31 @@ final class QueueStore {
 		return Schema::table();
 	}
 
-	public function enqueue( Submission $submission ): int {
+	/**
+	 * @throws \RuntimeException When the row cannot be written, so the caller can raise the capture alert.
+	 */
+	public function enqueue( Submission $submission, string $status = Schema::STATUS_QUEUED ): int {
 		global $wpdb;
 		$now = $this->utc_now();
 
-		$wpdb->insert(
+		$inserted = $wpdb->insert(
 			$this->table(),
 			[
 				'form_id'         => $submission->form_id,
 				'form_name'       => $submission->form_name,
 				'entry_id'        => $submission->entry_id,
-				'status'          => Schema::STATUS_QUEUED,
+				'status'          => $status,
 				'payload'         => wp_json_encode( $submission->to_array() ),
 				'attempts'        => 0,
-				'next_attempt_at' => $this->utc_now(),
+				'next_attempt_at' => $status === Schema::STATUS_QUEUED ? $now : null,
 				'created_at'      => $now,
 				'updated_at'      => $now,
 			]
 		);
+
+		if ( $inserted === false ) {
+			throw new \RuntimeException( 'Could not store submission: ' . $wpdb->last_error );
+		}
 
 		return (int) $wpdb->insert_id;
 	}
@@ -105,6 +112,31 @@ final class QueueStore {
 		);
 	}
 
+	/** A rate limit is the CRM asking us to wait, not a failed attempt, so attempts stay unchanged. */
+	public function mark_rate_limited( int $id, string $error, string $next_attempt_at, int $completed = 0 ): void {
+		$this->update(
+			$id,
+			[
+				'status'          => Schema::STATUS_FAILED,
+				'completed'       => $completed,
+				'last_error'      => $error,
+				'claim_token'     => null,
+				'next_attempt_at' => $next_attempt_at,
+			]
+		);
+	}
+
+	public function mark_unmapped( int $id ): void {
+		$this->update(
+			$id,
+			[
+				'status'          => Schema::STATUS_UNMAPPED,
+				'next_attempt_at' => null,
+				'claim_token'     => null,
+			]
+		);
+	}
+
 	public function mark_dead_letter( int $id, int $attempts, string $error, int $completed = 0 ): void {
 		$this->update(
 			$id,
@@ -140,11 +172,35 @@ final class QueueStore {
 		);
 	}
 
+	/**
+	 * Keeps claimed rows from looking stale while a long batch is still working through them.
+	 *
+	 * @param int[] $ids
+	 */
+	public function touch( array $ids ): void {
+		global $wpdb;
+		$ids = array_values( array_filter( array_map( 'intval', $ids ) ) );
+		if ( ! $ids ) {
+			return;
+		}
+
+		$table        = $this->table();
+		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+
+		$wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$table} SET updated_at = %s WHERE status = %s AND id IN ( {$placeholders} )",
+				array_merge( [ $this->utc_now(), Schema::STATUS_SENDING ], $ids )
+			)
+		);
+	}
+
 	public function requeue( int $id ): void {
 		$this->update(
 			$id,
 			[
 				'status'          => Schema::STATUS_QUEUED,
+				'attempts'        => 0,
 				'next_attempt_at' => $this->utc_now(),
 				'last_error'      => null,
 				'claim_token'     => null,
@@ -217,7 +273,7 @@ final class QueueStore {
 
 		return (int) $wpdb->query(
 			$wpdb->prepare(
-				"UPDATE {$table} SET status = %s, next_attempt_at = %s, last_error = NULL, updated_at = %s
+				"UPDATE {$table} SET status = %s, attempts = 0, next_attempt_at = %s, last_error = NULL, updated_at = %s
 				 WHERE status IN ( %s, %s )",
 				Schema::STATUS_QUEUED,
 				$this->utc_now(),
@@ -236,45 +292,34 @@ final class QueueStore {
 		);
 	}
 
-	public function consecutive_dead_letters( int $window ): int {
+	/** Dead letters hold the only copy of a lead the CRM rejected, so they go only when the caller opts in. */
+	public function purge_older_than( int $days, bool $include_dead_letters = false ): int {
 		global $wpdb;
-		$table  = $this->table();
-		$states = $wpdb->get_col(
-			$wpdb->prepare(
-				"SELECT status FROM {$table}
-				 WHERE status IN ( %s, %s )
-				 ORDER BY updated_at DESC
-				 LIMIT %d",
-				Schema::STATUS_SENT,
-				Schema::STATUS_DEAD_LETTER,
-				$window
-			)
-		);
-
-		$count = 0;
-		foreach ( $states as $status ) {
-			if ( $status === Schema::STATUS_DEAD_LETTER ) {
-				$count++;
-			} else {
-				break;
-			}
-		}
-		return $count;
-	}
-
-	public function purge_older_than( int $days ): int {
-		global $wpdb;
-		$table  = $this->table();
-		$cutoff = gmdate( 'Y-m-d H:i:s', time() - $days * DAY_IN_SECONDS );
+		$table    = $this->table();
+		$cutoff   = gmdate( 'Y-m-d H:i:s', time() - $days * DAY_IN_SECONDS );
+		$statuses = $include_dead_letters
+			? [ Schema::STATUS_SENT, Schema::STATUS_DEAD_LETTER ]
+			: [ Schema::STATUS_SENT ];
+		$placeholders = implode( ',', array_fill( 0, count( $statuses ), '%s' ) );
 
 		return (int) $wpdb->query(
 			$wpdb->prepare(
-				"DELETE FROM {$table} WHERE status IN ( %s, %s ) AND created_at < %s",
-				Schema::STATUS_SENT,
-				Schema::STATUS_DEAD_LETTER,
-				$cutoff
+				"DELETE FROM {$table} WHERE status IN ( {$placeholders} ) AND created_at < %s",
+				array_merge( $statuses, [ $cutoff ] )
 			)
 		);
+	}
+
+	/** Removes the stored submission, payload and CRM exchange. A row being sent is left alone. */
+	public function erase( int $id ): bool {
+		global $wpdb;
+		$table = $this->table();
+
+		$deleted = $wpdb->query(
+			$wpdb->prepare( "DELETE FROM {$table} WHERE id = %d AND status <> %s", $id, Schema::STATUS_SENDING )
+		);
+
+		return $deleted === 1;
 	}
 
 	private function update( int $id, array $data ): void {

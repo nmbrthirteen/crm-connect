@@ -47,7 +47,8 @@ final class Alerter {
 				$item->id,
 				$item->submission->form_name,
 				$exception->getMessage()
-			)
+			),
+			(int) $item->id
 		);
 		$this->notify(
 			'dead_letter',

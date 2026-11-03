@@ -13,6 +13,7 @@ final class Schema {
 	public const STATUS_SENT        = 'sent';
 	public const STATUS_FAILED      = 'failed';
 	public const STATUS_DEAD_LETTER = 'dead_letter';
+	public const STATUS_UNMAPPED    = 'unmapped';
 
 	public static function table(): string {
 		global $wpdb;
@@ -69,5 +70,7 @@ final class Schema {
 		delete_option( 'crm_connect_profiles' );
 		delete_option( 'crm_connect_events' );
 		delete_option( 'crm_connect_run_token' );
+		delete_option( 'crm_connect_paused' );
+		delete_option( 'crm_connect_consecutive_failures' );
 	}
 }

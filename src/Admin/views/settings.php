@@ -15,6 +15,8 @@ $notice     = isset( $_GET['crmc_notice'] ) ? sanitize_key( wp_unslash( $_GET['c
 
 	<?php if ( $notice === 'saved' ) : ?>
 		<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Settings saved.', 'crm-connect' ); ?></p></div>
+	<?php elseif ( $notice === 'key_error' ) : ?>
+		<div class="notice notice-error"><p><?php esc_html_e( 'The API key was not saved. Set unique AUTH_KEY and AUTH_SALT values in wp-config.php, then save again.', 'crm-connect' ); ?></p></div>
 	<?php endif; ?>
 
 	<div class="crm-connect-stats">
@@ -93,7 +95,17 @@ $notice     = isset( $_GET['crmc_notice'] ) ? sanitize_key( wp_unslash( $_GET['c
 				<th scope="row"><label for="retention_days"><?php esc_html_e( 'Keep history for (days)', 'crm-connect' ); ?></label></th>
 				<td>
 					<input name="retention_days" id="retention_days" type="number" min="0" class="small-text" value="<?php echo (int) $settings->retention_days(); ?>">
-					<p class="description"><?php esc_html_e( 'Older entries are removed automatically. Use 0 to keep everything.', 'crm-connect' ); ?></p>
+					<p class="description"><?php esc_html_e( 'Older sent entries are removed automatically. Use 0 to keep everything.', 'crm-connect' ); ?></p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Failed submissions', 'crm-connect' ); ?></th>
+				<td>
+					<label for="purge_dead_letters">
+						<input name="purge_dead_letters" id="purge_dead_letters" type="checkbox" value="1" <?php checked( $settings->purge_dead_letters() ); ?>>
+						<?php esc_html_e( 'Also remove failed submissions after the retention period', 'crm-connect' ); ?>
+					</label>
+					<p class="description"><?php esc_html_e( 'Off by default. Failed entries are the only copy of a lead the CRM rejected.', 'crm-connect' ); ?></p>
 				</td>
 			</tr>
 		</table>

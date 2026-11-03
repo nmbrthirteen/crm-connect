@@ -56,7 +56,7 @@ The submission is **persisted to our DB before any network call**, so a slow/dow
 - targets **one Elementor form** (matched by `form_name` + `form_id`)
 - contains **one or more destinations** (two-layer: e.g. Contact **and** Deal from a single submission)
 - has its own field map and dedup rule
-- a form with no profile is ignored
+- a form with no profile is still stored, with status `unmapped`, and not sent. **Retry** dispatches it once a mapping exists
 
 **Form-field discovery (before any submission):** parse the page's `_elementor_data` post meta for `widgetType: "form"` → `form_fields` repeater (`custom_id`, `field_label`, `field_type`). Fallback/enrichment: if a submission brings a field the parser missed, add it to the known-fields list automatically.
 
@@ -68,8 +68,8 @@ The submission is **persisted to our DB before any network call**, so a slow/dow
 - Static/default values per destination for required CRM fields
 
 **Unmapped fields - admin-gated auto-create (chosen path):**
-- One-click **"+ Create in Freshsales"** per unmapped form field → `POST /api/settings/<entity>/forms/<form_id>/fields` (text/number/dropdown/radio/lookup/multiselect), then wires the mapping. Deliberate, visible, once per field - never silent-on-every-submission (avoids schema rot, respects API scope/rate limits).
-- Anything still unmapped → **catch-all "Submission details" long-text field + a note/activity** on the record, so it's visible in the CRM.
+- *(Not built.)* One-click **"+ Create in Freshsales"** per unmapped form field → `POST /api/settings/<entity>/forms/<form_id>/fields` (text/number/dropdown/radio/lookup/multiselect), then wires the mapping. Deliberate, visible, once per field - never silent-on-every-submission (avoids schema rot, respects API scope/rate limits).
+- Anything still unmapped → **catch-all "Submission details" long-text field** on the record, so it's visible in the CRM. *(The note/activity on the record is not built.)*
 - Raw payload is **always** in our DB regardless → nothing is ever truly lost.
 
 **Dedup:** `POST /api/contacts/upsert` with `unique_identifier` (email) → create-or-update, no duplicate contacts.
@@ -102,7 +102,7 @@ The submission is **persisted to our DB before any network call**, so a slow/dow
 ## 7. Consent, PII & retention
 
 - **Cookie:** first-party, ~90-day lifetime, **default on**, gated behind a `filter` so a consent manager (Cookiebot/etc.) can suppress it when required.
-- **Retention:** setting to auto-purge queue rows older than N days (**default 180**).
+- **Retention:** setting to auto-purge `sent` queue rows older than N days (**default 180**). Failed (dead-letter) rows are kept unless a separate setting, off by default, allows purging them.
 - **Deletion:** one admin action to erase a submission's stored data (GDPR right-to-be-forgotten).
 
 ---

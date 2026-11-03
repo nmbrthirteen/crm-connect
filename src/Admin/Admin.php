@@ -25,6 +25,7 @@ final class Admin {
 		add_action( 'admin_post_crm_connect_retry', [ $this, 'handle_retry' ] );
 		add_action( 'admin_post_crm_connect_retry_all', [ $this, 'handle_retry_all' ] );
 		add_action( 'admin_post_crm_connect_resume', [ $this, 'handle_resume' ] );
+		add_action( 'admin_post_crm_connect_erase', [ $this, 'handle_erase' ] );
 		add_action( 'admin_post_crm_connect_clear_log', [ $this, 'handle_clear_log' ] );
 	}
 
@@ -100,6 +101,9 @@ final class Admin {
 					'goToSettings'  => __( 'Open Settings', 'crm-connect' ),
 					'pickFormFirst' => __( 'Select a form first.', 'crm-connect' ),
 					'noFields'      => __( 'No fields found for this form. You can still map trackables (UTMs, etc.).', 'crm-connect' ),
+					'eraseTitle'    => __( 'Erase this submission?', 'crm-connect' ),
+					'eraseMsg'      => __( 'This permanently deletes the stored data and its log entries. Records already sent to the CRM are not affected.', 'crm-connect' ),
+					'erase'         => __( 'Erase', 'crm-connect' ),
 					'badResponse'   => __( 'The server returned an unexpected response. The REST API may be blocked by a security plugin, or the CRM credentials may be wrong.', 'crm-connect' ),
 				],
 			]
@@ -147,12 +151,19 @@ final class Admin {
 				'slack_webhook'       => esc_url_raw( wp_unslash( $_POST['slack_webhook'] ?? '' ) ),
 				'retention_days'      => max( 0, (int) ( $_POST['retention_days'] ?? 180 ) ),
 				'autopause_threshold' => max( 0, (int) ( $_POST['autopause_threshold'] ?? 10 ) ),
+				'purge_dead_letters'  => ! empty( $_POST['purge_dead_letters'] ),
 			]
 		);
 
 		$api_key = trim( (string) wp_unslash( $_POST['api_key'] ?? '' ) );
-		if ( $api_key !== '' ) {
-			$settings->set_api_key( $api_key );
+		try {
+			if ( $api_key !== '' ) {
+				$settings->set_api_key( $api_key );
+			} else {
+				$settings->upgrade_api_key_storage();
+			}
+		} catch ( \RuntimeException $e ) {
+			$this->redirect( self::SLUG, 'key_error' );
 		}
 
 		$this->redirect( self::SLUG, 'saved' );
@@ -184,6 +195,19 @@ final class Admin {
 		do_action( 'crm_connect_dispatch_queue' );
 
 		$this->redirect( self::SLUG . '-submissions', 'resumed' );
+	}
+
+	public function handle_erase(): void {
+		$id = (int) ( $_REQUEST['id'] ?? 0 );
+		$this->guard( 'crm_connect_erase_' . $id );
+
+		if ( ! $this->plugin->queue()->erase( $id ) ) {
+			$this->redirect( self::SLUG . '-submissions', 'erase_failed' );
+		}
+
+		EventLog::forget_submission( $id );
+
+		$this->redirect( self::SLUG . '-submissions', 'erased' );
 	}
 
 	public function handle_clear_log(): void {
